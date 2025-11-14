@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Text, TouchableOpacity, ActivityIndicator, ScrollView, Image, View } from 'react-native';
+import { View } from 'react-native';
 import SignInScreen from './src/auth/SignInScreen';
 import RegisterScreen from './src/auth/RegisterScreen';
 import LanguagePickerScreen from './src/auth/LanguagePickerScreen';
@@ -50,6 +50,7 @@ export default function App() {
       <SafeAreaProvider >
         <View style={{ flex: 1 }}>
           <LanguagePickerScreen onLanguageSelect={setLanguage} />
+          <ToastHost />
         </View>
       </SafeAreaProvider>
     );
@@ -88,6 +89,7 @@ export default function App() {
               onCancel={() => setShowRegister(false)}
             />
           )}
+          <ToastHost />
         </View>
       </SafeAreaProvider>
     );
@@ -100,7 +102,6 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <View style={{ flex: 1 }}>
-          <ToastHost />
           {supplierScreen === 'supplier-home' && (
             <SupplierHomeScreen language={language as 'en' | 'ru'} userName={supplierName} navigateTo={navigateSupplierTo} />
           )}
@@ -131,6 +132,7 @@ export default function App() {
           {supplierScreen === 'supplier-profile' && (
             <SupplierProfileScreen language={language as 'en' | 'ru'} onLanguageChange={(l) => setLanguage(l)} onLogout={() => { setSignedIn(false); setRole(null); setConsumerScreen('consumer-home'); }} navigateTo={navigateSupplierTo} supplierName={supplierName} />
           )}
+          <ToastHost />
         </View>
       </SafeAreaProvider>
     );
@@ -159,7 +161,6 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1 }}>
-        <ToastHost />
         {consumerScreen === 'consumer-home' && (
           <ConsumerHomeScreen language={language} navigateTo={navigateTo} />
         )}
@@ -203,6 +204,7 @@ export default function App() {
         {consumerScreen === 'consumer-profile' && (
           <ConsumerProfileScreen user={user} language={language as 'en' | 'ru'} setLanguage={(l) => setLanguage(l)} onLogout={() => { setSignedIn(false); setRole(null); setConsumerScreen('consumer-home'); }} onBack={() => setConsumerScreen('consumer-home')} />
         )}
+        <ToastHost />
       </View>
     </SafeAreaProvider>
   );

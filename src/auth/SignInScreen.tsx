@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { toastShow } from '../helpers/toast';
 
 type Language = 'en' | 'ru';
 
@@ -53,9 +54,23 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
   const t = translations[language];
 
   const handleContinue = () => {
-    if (selectedRole && email && password && onSignIn) {
-      onSignIn(selectedRole);
+    // Basic client-side validation: require role, email and password.
+    if (!selectedRole || !email || !password) {
+      toastShow('Validation', 'All fields are required');
+      return;
     }
+
+    // Placeholder for server-side verification. Backend team will replace this.
+    // For now we assume verification passes. If you want to simulate a failure,
+    // set `mockVerified` to false.
+    const mockVerified = true;
+
+    if (!mockVerified) {
+      toastShow('Error', 'Incorrect data inserted! Try again with correct role and credentials.');
+      return;
+    }
+
+    if (onSignIn) onSignIn(selectedRole);
   };
 
   return (
@@ -108,7 +123,6 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
         <TouchableOpacity
           style={[styles.continueButton, (!selectedRole || !email || !password) && styles.continueButtonDisabled]}
           onPress={handleContinue}
-          disabled={!selectedRole || !email || !password}
         >
           <Text style={styles.continueButtonText}>{t.continue}</Text>
         </TouchableOpacity>

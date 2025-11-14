@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { linkedSuppliers, orders, complaints } from '../../api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { emitter } from '../../helpers/events';
 
 type Language = 'en' | 'ru';
 
@@ -68,9 +69,9 @@ export default function SupplierHomeScreen({ language = 'en', userName = 'TechPr
       }
     };
     load();
-    const off1 = (require('./src/events').emitter).on('linkRequestsChanged', load);
-    const off2 = (require('./src/events').emitter).on('ordersChanged', load);
-    const off3 = (require('./src/events').emitter).on('complaintsChanged', load);
+    const off1 = emitter.on('linkRequestsChanged', load);
+    const off2 = emitter.on('ordersChanged', load);
+    const off3 = emitter.on('complaintsChanged', load);
     return () => { mounted = false; try { off1(); off2(); off3(); } catch (e) {} };
   }, [userName]);
 

@@ -9,6 +9,9 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
   const [c, setC] = useState<any | null>(null);
   const [escalating, setEscalating] = useState(false);
   const [escalated, setEscalated] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [resolved, setResolved] = useState(false);
+  const [actionLocked, setActionLocked] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -21,7 +24,16 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
         let orderData = null;
         try { orderData = await (orders as any).fetchOrderById(found.orderId); } catch (e) {}
         const payload = { ...found, _order: orderData };
-        if (mounted) setC(payload);
+        if (mounted) {
+          setC(payload);
+          // initialize action states from persisted complaint status so irreversible
+          // actions remain locked when revisiting the detail screen
+          const isEscalated = String(payload.status) === 'In Progress';
+          const isResolved = String(payload.status) === 'Resolved';
+          setEscalated(isEscalated);
+          setResolved(isResolved);
+          if (isEscalated || isResolved) setActionLocked(true);
+        }
       } catch (e) {}
     })();
     return () => { mounted = false; };
@@ -70,20 +82,51 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
         </View>
 
         <View style={{ marginTop: 24 }}>
+          {/* Resolved button: mark complaint as resolved by supplier after talking to consumer */}
           <TouchableOpacity
             onPress={async () => {
               if (!c) return;
               try {
+                // immediately lock other actions to prevent concurrent irreversible updates
+                setActionLocked(true);
+                setResolving(true);
+                await (complaints as any).updateComplaintStatus(c.id, 'Resolved');
+                setResolved(true);
+                // update local view
+                setC((prev: any) => prev ? { ...prev, status: 'Resolved' } : prev);
+                toastShow('Resolved', 'Complaint marked as resolved');
+                // keep actionLocked true because this is an irreversible action
+              } catch (e) {
+                toastShow('Error', 'Could not mark complaint as resolved');
+                // allow retry if failure
+                setActionLocked(false);
+              } finally { setResolving(false); }
+            }}
+            disabled={resolving || resolved || actionLocked}
+            style={[{ backgroundColor: '#059669', padding: 14, borderRadius: 8, alignItems: 'center', marginBottom: 12 }, (resolved || actionLocked) && { opacity: 0.6 }]}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>{resolved ? 'Resolved' : resolving ? 'Resolving...' : 'Resolved the Complaint'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={async () => {
+              if (!c) return;
+              try {
+                // immediately lock other actions to prevent concurrent irreversible updates
+                setActionLocked(true);
                 setEscalating(true);
                 await (complaints as any).escalateToManager(c.id);
                 setEscalated(true);
                 toastShow('Escalated', 'Complaint details were sent to manager');
+                // keep actionLocked true because this is an irreversible action
               } catch (e) {
                 toastShow('Error', 'Could not escalate complaint');
+                // allow retry if failure
+                setActionLocked(false);
               } finally { setEscalating(false); }
             }}
-            disabled={escalating || escalated}
-            style={[{ backgroundColor: '#f97316', padding: 14, borderRadius: 8, alignItems: 'center', marginBottom: 12 }, escalated && { opacity: 0.6 }]}
+            disabled={escalating || escalated || actionLocked}
+            style={[{ backgroundColor: '#f97316', padding: 14, borderRadius: 8, alignItems: 'center', marginBottom: 12 }, (escalated || actionLocked) && { opacity: 0.6 }]}
           >
             <Text style={{ color: '#fff', fontWeight: '700' }}>{escalated ? 'Escalated' : escalating ? 'Escalating...' : 'Escalate to Manager'}</Text>
           </TouchableOpacity>
