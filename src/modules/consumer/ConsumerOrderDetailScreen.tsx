@@ -4,6 +4,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native
 import { Feather } from '@expo/vector-icons';
 import { fetchOrderById, Order } from '../../api/orders.mock';
 import { complaints } from '../../api';
+import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
 import ComplaintModal from './ComplaintModal';
 
@@ -16,6 +17,8 @@ export default function ConsumerOrderDetailScreen({ orderId, onBack, onOpenChat,
   const L = t[language ?? 'en'];
   const [loading, setLoading] = useState(false);
   const [complaintModalVisible, setComplaintModalVisible] = useState(false);
+  const [complaint, setComplaint] = useState<any | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState<boolean>(false);
 
   const Timeline = () => {
     const steps = [
@@ -63,9 +66,22 @@ export default function ConsumerOrderDetailScreen({ orderId, onBack, onOpenChat,
       try {
         const o = await fetchOrderById(orderId);
         if (mounted) setOrder(o);
+        // attempt to load any existing complaint for this order
+        try {
+          const existing = await (complaints as any).fetchComplaintByOrderId(orderId);
+          if (mounted) setComplaint(existing);
+        } catch (e) {}
       } finally { if (mounted) setLoading(false); }
     })();
-    return () => { mounted = false; };
+    // subscribe to complaint changes so consumer sees status updates
+    const off = emitter.on('complaintsChanged', async () => {
+      if (!orderId) return;
+      try {
+        const updated = await (complaints as any).fetchComplaintByOrderId(orderId);
+        if (mounted) setComplaint(updated);
+      } catch (e) {}
+    });
+    return () => { mounted = false; off(); };
   }, [orderId]);
 
   return (
@@ -113,9 +129,61 @@ export default function ConsumerOrderDetailScreen({ orderId, onBack, onOpenChat,
                   <Text>{L.orderDetail}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setComplaintModalVisible(true)} style={{ marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fecaca', alignItems: 'center' }}>
-                  <Text style={{ color: '#b91c1c', fontWeight: '700' }}>Report an issue</Text>
-                </TouchableOpacity>
+                <View>
+                  <TouchableOpacity
+                    onPress={() => setComplaintModalVisible(true)}
+                    disabled={!!complaint}
+                    style={[{ marginTop: 12, padding: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center' }, complaint ? { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb' } : { backgroundColor: '#fee2e2', borderColor: '#fecaca' }]}
+                  >
+                    <Text style={{ color: complaint ? '#6b7280' : '#b91c1c', fontWeight: '700' }}>{complaint ? 'Complaint Submitted' : 'Report an issue'}</Text>
+                  </TouchableOpacity>
+
+                  {/* Mini status grid shown when a complaint exists */}
+                  {complaint && (
+                    <View style={{ marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' }}>
+                      <Text style={{ fontWeight: '700', marginBottom: 6 }}>Complaint Status</Text>
+                      {/* show reason first (full width) so long descriptions don't push status off-screen */}
+                      <View>
+                        <Text style={{ color: '#374151' }}>{complaint.reason || 'No description provided'}</Text>
+                        <Text style={{ color: '#6b7280', marginTop: 6, fontSize: 12 }}>Submitted: {new Date(complaint.createdAt).toLocaleString()}</Text>
+                      </View>
+                      {/* status on its own row below the description */}
+                      <View style={{ marginTop: 8, alignItems: 'flex-end' }}>
+                        <Text style={{ color: complaint.status === 'Resolved' ? '#059669' : complaint.status === 'In Progress' ? '#f59e0b' : '#b91c1c', fontWeight: '700' }}>{complaint.status}</Text>
+                      </View>
+
+                      {/* If supplier resolved the complaint, ask for feedback */}
+                      {complaint.status === 'Resolved' && !feedbackGiven && (
+                        <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={{ color: '#374151' }}>Did this resolution help you?</Text>
+                          <View style={{ flexDirection: 'row' }}>
+                            <TouchableOpacity onPress={() => { setFeedbackGiven(true); try { toastShow('Thanks', 'Thanks for your feedback!'); } catch (e) {} }} style={{ backgroundColor: '#059669', padding: 8, borderRadius: 8, marginRight: 8 }}>
+                              <Text style={{ color: '#fff' }}>Yes</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={async () => {
+                              // consumer indicated 'No' — reopen the complaint for supplier action
+                              try {
+                                setFeedbackGiven(true);
+                                await (complaints as any).updateComplaintStatus(complaint.id, 'Open');
+                                // update local view
+                                const updated = await (complaints as any).fetchComplaintByOrderId(orderId as string);
+                                setComplaint(updated);
+                                try { toastShow('Thanks', 'We notified the supplier and reopened the complaint'); } catch (e) {}
+                              } catch (e) {
+                                try { toastShow('Error', 'Could not reopen complaint'); } catch (e) {}
+                              }
+                            }} style={{ backgroundColor: '#f3f4f6', padding: 8, borderRadius: 8 }}>
+                              <Text>No</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      )}
+                      {feedbackGiven && (
+                        <Text style={{ color: '#6b7280', marginTop: 8 }}>Thank you for your response.</Text>
+                      )}
+                    </View>
+                  )}
+                </View>
             
       <ComplaintModal
         visible={complaintModalVisible}
@@ -124,7 +192,9 @@ export default function ConsumerOrderDetailScreen({ orderId, onBack, onOpenChat,
         onSubmit={async (reason: string) => {
           if (!orderId) return;
           try {
-            await complaints.createComplaint(orderId, undefined, order?.supplier, reason || '', userName || undefined);
+            const created = await complaints.createComplaint(orderId, undefined, order?.supplier, reason || '', userName || undefined);
+            // set local complaint state so the consumer sees the mini-grid and can't resubmit
+            setComplaint(created);
             try { toastShow('Complaint logged', 'We have recorded your issue and supplier will be notified'); } catch (e) {}
           } catch (e) {
             try { toastShow('Error', 'Could not submit complaint'); } catch (e) {}

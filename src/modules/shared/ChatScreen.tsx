@@ -80,16 +80,23 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
   };
 
   const renderItem = ({ item }: any) => (
-    <View style={[styles.msgRow, item.from === 'supplier' ? styles.msgRowRight : styles.msgRowLeft]}>
-      <View style={[styles.msgBubble, item.from === 'supplier' ? styles.msgBubbleRight : styles.msgBubbleLeft]}>
-        {/* sender header: avatar + label */}
-        <View style={styles.senderRow}>
-          <View style={[styles.avatar, item.from === role ? styles.avatarYou : styles.avatarOther]}>
-            <Text style={[styles.avatarText, item.from === role ? styles.avatarTextYou : styles.avatarTextOther]}>{item.from === role ? 'You' : (item.from === 'supplier' ? 'S' : 'C')}</Text>
-          </View>
-          <Text style={[styles.senderLabel, item.from === role ? styles.senderLabelYou : styles.senderLabelOther]}>{item.from === role ? 'You' : (item.from === 'supplier' ? 'Supplier' : 'Consumer')}</Text>
+    item.system ? (
+      <View style={{ alignItems: 'center', marginVertical: 8 }}>
+        <View style={[styles.systemBlock, item.severity === 'error' ? styles.systemError : item.severity === 'warning' ? styles.systemWarning : item.severity === 'success' ? styles.systemSuccess : styles.systemInfo]}>
+          <Text style={styles.systemText}>{item.text}</Text>
         </View>
-  {item.text ? <Text style={item.from === 'supplier' ? styles.msgTextRight : styles.msgTextLeft}>{item.text}</Text> : null}
+      </View>
+    ) : (
+      <View style={[styles.msgRow, item.from === 'supplier' ? styles.msgRowRight : styles.msgRowLeft]}>
+        <View style={[styles.msgBubble, item.from === 'supplier' ? styles.msgBubbleRight : styles.msgBubbleLeft]}>
+          {/* sender header: avatar + label */}
+          <View style={styles.senderRow}>
+            <View style={[styles.avatar, item.from === role ? styles.avatarYou : styles.avatarOther]}>
+              <Text style={[styles.avatarText, item.from === role ? styles.avatarTextYou : styles.avatarTextOther]}>{item.from === role ? 'You' : (item.from === 'supplier' ? 'S' : 'C')}</Text>
+            </View>
+            <Text style={[styles.senderLabel, item.from === role ? styles.senderLabelYou : styles.senderLabelOther]}>{item.from === role ? 'You' : (item.from === 'supplier' ? 'Supplier' : 'Consumer')}</Text>
+          </View>
+    {item.text ? <Text style={item.from === 'supplier' ? styles.msgTextRight : styles.msgTextLeft}>{item.text}</Text> : null}
         {/* attachments */}
         {item.attachments && item.attachments.length > 0 ? (
           <View style={{ marginTop: 8 }}>
@@ -112,7 +119,8 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
           {item.from === role ? <Text style={{ fontSize: 11, color: item.read ? '#059669' : '#6b7280', marginLeft: 8 }}>{item.read ? 'Read' : item.delivered ? 'Delivered' : ''}</Text> : null}
         </View>
       </View>
-    </View>
+      </View>
+    )
   );
 
   return (
@@ -211,6 +219,13 @@ const styles = StyleSheet.create({
   msgTextLeft: { color: '#111827' },
   msgTextRight: { color: '#fff' },
   msgTs: { fontSize: 10, color: '#6b7280', marginTop: 6, textAlign: 'right' },
+  /* system message styles */
+  systemBlock: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, maxWidth: '92%' },
+  systemText: { color: '#111827', textAlign: 'center', fontWeight: '600' },
+  systemError: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fecaca' },
+  systemWarning: { backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa' },
+  systemSuccess: { backgroundColor: '#ecfdf5', borderWidth: 1, borderColor: '#bbf7d0' },
+  systemInfo: { backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' },
   /* sender header */
   senderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   avatar: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 8 },

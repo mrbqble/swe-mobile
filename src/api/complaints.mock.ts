@@ -1,4 +1,5 @@
 import { emitter } from '../helpers/events';
+import { sendSystemMessage } from './chat.mock';
 
 export type Complaint = {
   id: string;
@@ -28,6 +29,7 @@ export async function createComplaint(orderId: string, consumerId?: string | num
   store.unshift(c);
   await new Promise((r) => setTimeout(r, 120));
   try { emitter.emit('complaintsChanged'); } catch (e) {}
+  try { await sendSystemMessage(orderId, `${consumerName || 'A consumer'} submitted a complaint for this order`, 'warning'); } catch (e) {}
   return c;
 }
 
@@ -48,12 +50,28 @@ export async function fetchComplaintById(complaintId: string) {
   return store.find(c => c.id === complaintId) || null;
 }
 
+export async function fetchComplaintByOrderId(orderId: string) {
+  await new Promise((r) => setTimeout(r, 80));
+  return store.find(c => String(c.orderId) === String(orderId)) || null;
+}
+
 export async function updateComplaintStatus(complaintId: string, status: Complaint['status']) {
   const idx = store.findIndex(c => c.id === complaintId);
   if (idx < 0) return null;
   store[idx].status = status;
   await new Promise((r) => setTimeout(r, 80));
   try { emitter.emit('complaintsChanged'); } catch (e) {}
+  // notify chat thread (orderId) about status changes
+  try {
+    const threadId = store[idx].orderId;
+    if (status === 'Resolved') {
+      await sendSystemMessage(threadId, `The complaint was resolved by supplier.`, 'success');
+    } else if (status === 'Open') {
+      await sendSystemMessage(threadId, `The complaint was reopened by the consumer.`, 'warning');
+    } else if (status === 'In Progress') {
+      await sendSystemMessage(threadId, `Complaint marked in progress.`, 'info');
+    }
+  } catch (e) {}
   return store[idx];
 }
 
@@ -75,6 +93,7 @@ export async function escalateToManager(complaintId: string) {
   await new Promise((r) => setTimeout(r, 120));
   try { emitter.emit('escalationsChanged'); } catch (e) {}
   try { emitter.emit('complaintsChanged'); } catch (e) {}
+  try { await sendSystemMessage(found.orderId, `Complaint has been escalated to manager.`, 'warning'); } catch (e) {}
   return rec;
 }
 

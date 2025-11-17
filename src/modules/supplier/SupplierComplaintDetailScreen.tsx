@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { complaints, orders } from '../../api';
+import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
 
 export default function SupplierComplaintDetailScreen({ complaintId, onBack, onOpenChat }: { complaintId?: string | null; onBack?: () => void; onOpenChat?: (orderId?: string | null) => void }) {
@@ -15,7 +16,8 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    const load = async () => {
       if (!complaintId) return;
       try {
         const found = await (complaints as any).fetchComplaintById(complaintId);
@@ -32,11 +34,36 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
           const isResolved = String(payload.status) === 'Resolved';
           setEscalated(isEscalated);
           setResolved(isResolved);
-          if (isEscalated || isResolved) setActionLocked(true);
+          setActionLocked(isEscalated || isResolved);
         }
       } catch (e) {}
-    })();
-    return () => { mounted = false; };
+    };
+
+    load();
+
+    // subscribe to complaint updates so supplier sees reopen/changes in real time
+    const off = emitter.on('complaintsChanged', async () => {
+      if (!complaintId) return;
+      try {
+        const found = await (complaints as any).fetchComplaintById(complaintId);
+        if (!found) return;
+        if (!mounted) return;
+        // fetch order details as well
+        let orderData = null;
+        try { orderData = await (orders as any).fetchOrderById(found.orderId); } catch (e) {}
+        const payload = { ...found, _order: orderData };
+        setC(payload);
+        // update action states according to current status
+        const isEscalated = String(found.status) === 'In Progress';
+        const isResolved = String(found.status) === 'Resolved';
+        setEscalated(isEscalated);
+        setResolved(isResolved);
+        // if complaint is now open again, allow actions
+        setActionLocked(isEscalated || isResolved);
+      } catch (e) {}
+    });
+
+    return () => { mounted = false; off(); };
   }, [complaintId]);
 
   if (!c) return (

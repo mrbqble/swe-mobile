@@ -9,6 +9,8 @@ export type ChatMessage = {
   ts: string; // ISO timestamp
   delivered?: boolean;
   read?: boolean;
+  system?: boolean;
+  severity?: 'info' | 'warning' | 'success' | 'error';
 };
 
 const store: Record<string, ChatMessage[]> = {};
@@ -23,6 +25,15 @@ export async function sendMessage(threadId: string, from: string, text?: string,
   store[threadId] = store[threadId] || [];
   store[threadId].push(msg);
   // simulate async
+  await new Promise((r) => setTimeout(r, 60));
+  try { emitter.emit(`chatChanged:${threadId}`, threadId); emitter.emit('chatChanged', threadId); } catch (e) {}
+  return msg;
+}
+
+export async function sendSystemMessage(threadId: string, text?: string, severity: 'info' | 'warning' | 'success' | 'error' = 'info') {
+  const msg: ChatMessage = { id: `m-${Date.now()}`, threadId, from: 'system', text, attachments: [], ts: new Date().toISOString(), delivered: true, read: false, system: true, severity };
+  store[threadId] = store[threadId] || [];
+  store[threadId].push(msg);
   await new Promise((r) => setTimeout(r, 60));
   try { emitter.emit(`chatChanged:${threadId}`, threadId); emitter.emit('chatChanged', threadId); } catch (e) {}
   return msg;

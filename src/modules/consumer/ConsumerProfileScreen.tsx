@@ -18,11 +18,10 @@ export default function ConsumerProfileScreen({ user, language, setLanguage, onL
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={{ padding: 8 }}>
+        <TouchableOpacity onPress={onBack} style={{ position: 'absolute', left: 12, top: 12, padding: 8 }}>
           <Text style={{ fontSize: 18 }}>←</Text>
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: '600' }}>{L.profile}</Text>
-        <View style={{ width: 36 }} />
       </View>
 
       <View style={{ alignItems: 'center', paddingTop: 24 }}>

@@ -44,6 +44,7 @@ export default function App() {
   const [supplierScreen, setSupplierScreen] = useState<string>('supplier-home');
   const [supplierSelectedOrderId, setSupplierSelectedOrderId] = useState<string | null>(null);
   const [supplierSelectedComplaintId, setSupplierSelectedComplaintId] = useState<string | null>(null);
+  const [supplierChatReturnTo, setSupplierChatReturnTo] = useState<string>('supplier-order-detail');
 
   if (language === null) {
     return (
@@ -121,13 +122,29 @@ export default function App() {
             <SupplierComplaintsScreen supplierName={supplierName} onBack={() => setSupplierScreen('supplier-home')} onOpenComplaint={(id: string) => { setSupplierSelectedComplaintId(id); setSupplierScreen('complaint-detail'); }} />
           )}
           {supplierScreen === 'complaint-detail' && (
-            <SupplierComplaintDetailScreen complaintId={supplierSelectedComplaintId} onBack={() => setSupplierScreen('complaints')} onOpenChat={(orderId) => { setSupplierSelectedOrderId(orderId || null); setSupplierScreen('chat'); }} />
+            <SupplierComplaintDetailScreen
+              complaintId={supplierSelectedComplaintId}
+              onBack={() => setSupplierScreen('complaints')}
+              onOpenChat={(orderId) => {
+                setSupplierSelectedOrderId(orderId || null);
+                setSupplierChatReturnTo('complaint-detail');
+                setSupplierScreen('chat');
+              }}
+            />
           )}
           {supplierScreen === 'supplier-order-detail' && (
-            <SupplierOrderDetailScreen orderId={supplierSelectedOrderId} onBack={() => setSupplierScreen('supplier-orders')} onOpenChat={() => setSupplierScreen('chat')} language={language as 'en' | 'ru'} />
+            <SupplierOrderDetailScreen
+              orderId={supplierSelectedOrderId}
+              onBack={() => setSupplierScreen('supplier-orders')}
+              onOpenChat={() => {
+                setSupplierChatReturnTo('supplier-order-detail');
+                setSupplierScreen('chat');
+              }}
+              language={language as 'en' | 'ru'}
+            />
           )}
           {supplierScreen === 'chat' && (
-            <ChatScreen orderId={supplierSelectedOrderId} onBack={() => setSupplierScreen('supplier-order-detail')} role="supplier" />
+            <ChatScreen orderId={supplierSelectedOrderId} onBack={() => setSupplierScreen(supplierChatReturnTo)} role="supplier" />
           )}
           {supplierScreen === 'supplier-profile' && (
             <SupplierProfileScreen language={language as 'en' | 'ru'} onLanguageChange={(l) => setLanguage(l)} onLogout={() => { setSignedIn(false); setRole(null); setConsumerScreen('consumer-home'); }} navigateTo={navigateSupplierTo} supplierName={supplierName} />
