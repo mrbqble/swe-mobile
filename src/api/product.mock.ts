@@ -1,4 +1,5 @@
 import { Product } from '../helpers/types';
+import * as Catalog from './catalog.mock';
 
 const mockProducts: Product[] = [
   { id: 1, name: 'Industrial Motor XL-2000', price: 125500, stock: 15, imageUrl: 'https://images.unsplash.com/photo-1535662755496-7a1b41997db2?q=80&w=400', supplier: 'TechPro Supply' },
@@ -8,6 +9,13 @@ const mockProducts: Product[] = [
 ];
 
 export async function fetchProduct(id: number | string): Promise<Product | null> {
-  const p = mockProducts.find(x => String(x.id) === String(id)) || null;
-  return p;
+  const p = mockProducts.find(x => String(x.id) === String(id));
+  if (p) return p;
+  // fallback to catalog store (products added via catalog API)
+  try {
+    const fromCatalog = await (Catalog as any).fetchProduct(id);
+    return fromCatalog as Product | null;
+  } catch (e) {
+    return null;
+  }
 }

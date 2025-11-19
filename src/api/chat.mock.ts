@@ -50,7 +50,12 @@ export async function markThreadRead(threadId: string, reader: string) {
 export async function uploadAttachment(localUri: string, fileName?: string) {
   // simulate network / upload time
   await new Promise((r) => setTimeout(r, 250));
-  // create a mock public URL using timestamp + filename (no external network)
+  // If the localUri looks like a local file (file:// or content:// or data:),
+  // just return it back so React Native Image can render the local preview.
+  if (typeof localUri === 'string' && (localUri.startsWith('file:') || localUri.startsWith('content:') || localUri.startsWith('data:') || localUri.startsWith('/'))) {
+    return { url: localUri, size: 0 };
+  }
+  // otherwise, create a mock public URL using timestamp + filename (no external network)
   const base = 'https://mock.cdn.local';
   const name = (fileName && fileName.replace(/[^a-z0-9.-]/gi, '_')) || `${Date.now()}`;
   const url = `${base}/uploads/${name}-${Date.now()}`;

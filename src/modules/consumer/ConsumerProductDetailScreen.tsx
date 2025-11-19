@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useProduct } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
@@ -21,6 +21,8 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>('');
   const insets = useSafeAreaInsets();
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
 
   const increment = () => setQty((q) => Math.min((item?.stock ?? 9999), q + 1));
   const decrement = () => setQty((q) => Math.max(1, q - 1));
@@ -62,7 +64,11 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {item?.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
+        {((item?.imageUrl) || ((item as any)?.image)) && (
+          <TouchableOpacity onPress={() => { setPreviewUri((item?.imageUrl ?? (item as any)?.image) as string); setPreviewVisible(true); }} activeOpacity={0.9}>
+            <Image source={{ uri: (item?.imageUrl ?? (item as any)?.image) as string }} style={styles.image} />
+          </TouchableOpacity>
+        )}
         <Text style={styles.title}>{item?.name}</Text>
         <Text style={styles.supplier}>{item?.supplier}</Text>
         <View style={styles.rowBetweenLarge}>
@@ -122,6 +128,15 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
           <Text style={{ color: '#fff' }}>{toastMessage}</Text>
         </View>
       )}
+      {/* Fullscreen image preview modal */}
+      <Modal visible={previewVisible} transparent animationType="fade">
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => setPreviewVisible(false)} style={{ position: 'absolute', top: 40, right: 20, zIndex: 10 }}>
+            <Feather name="x" size={28} color="#fff" />
+          </TouchableOpacity>
+          {previewUri ? <Image source={{ uri: previewUri }} style={{ width: '92%', height: '72%', resizeMode: 'contain' }} /> : null}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

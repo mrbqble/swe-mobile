@@ -38,7 +38,7 @@ export async function fetchProduct(id: number | string): Promise<Product | null>
 
 export async function addProduct({ name, price, stock = 0, sku, description, imageUrl = '', supplier }: { name: string; price: number; stock?: number; sku?: string; description?: string; imageUrl?: string; supplier?: string }) {
   const id = Date.now();
-  const prod: Product = { id, name, price, stock, imageUrl, supplier: supplier || 'Unknown' } as any;
+  const prod: Product & any = { id, name, price, stock, imageUrl, image: imageUrl, supplier: supplier || 'Unknown', description, sku, createdAt: new Date().toISOString() } as any;
   mockProducts.unshift(prod);
   await new Promise((r) => setTimeout(r, 120));
   try { emitter.emit('catalogChanged'); } catch (e) {}

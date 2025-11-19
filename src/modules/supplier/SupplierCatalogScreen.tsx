@@ -45,7 +45,7 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await catalog.fetchCatalog({ search: query } as any);
+      const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
       setProducts(res.data || []);
     } catch (e) {}
     setRefreshing(false);
@@ -56,7 +56,7 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
   const renderItem = ({ item }: any) => (
     <View style={styles.card}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Image source={{ uri: item.image }} style={styles.thumb} />
+        <Image source={{ uri: item.imageUrl || item.image }} style={styles.thumb} />
         <View style={{ marginLeft: 12, flex: 1 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>
