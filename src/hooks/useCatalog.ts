@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Product } from '../helpers/types';
 import { catalog } from '../api';
 
-export function useCatalog(initialQuery = '', pageSize = 20) {
+export function useCatalog(initialQuery = '', pageSize = 20, supplierId?: number | string) {
   const [query, setQuery] = useState(initialQuery);
   const [items, setItems] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
@@ -18,17 +18,18 @@ export function useCatalog(initialQuery = '', pageSize = 20) {
       load(1);
     }, 300);
     return () => clearTimeout(id);
-  }, [query]);
+  }, [query, supplierId]);
 
   async function load(nextPage = 1) {
     setLoading(true);
     setError(null);
     try {
-      const resp = await (catalog as any).fetchCatalog({ search: queryRef.current, page: nextPage, limit: pageSize });
-      if (nextPage === 1) setItems(resp.data);
-      else setItems(prev => [...prev, ...resp.data]);
-      setPage(nextPage);
-      setHasMore(nextPage < resp.meta.pages);
+        // pass supplierId to catalog adapter if present
+        const resp = await (catalog as any).fetchCatalog({ supplier_id: supplierId, page: nextPage, size: pageSize, search: queryRef.current });
+        if (nextPage === 1) setItems(resp.data || []);
+        else setItems(prev => [...prev, ...(resp.data || [])]);
+        setPage(nextPage);
+        setHasMore(nextPage < (resp.meta?.pages ?? 1));
     } catch (err: any) {
       setError(err);
     } finally {

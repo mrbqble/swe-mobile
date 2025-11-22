@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { fetchOrderById, Order } from '../../api/orders.mock';
+import { orders } from '../../api';
 import { toastShow } from '../../helpers/toast';
 
 export default function SupplierOrderDetailScreen({ orderId, onBack, onOpenChat, language }: { orderId: string | null; onBack: () => void; onOpenChat?: () => void; language?: 'en' | 'ru' }) {
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<any | null>(null);
   const t = {
     en: { orderDetail: 'Order Details', loading: 'Loading...', order: 'Order', supplier: 'Supplier', date: 'Date', status: 'Status', timeline: 'Timeline', orderCreated: 'Order Created', total: 'Total', qty: 'Qty', openChat: 'Open Chat' },
     ru: { orderDetail: 'Детали заказа', loading: 'Загрузка...', order: 'Заказ', supplier: 'Поставщик', date: 'Дата', status: 'Статус', timeline: 'Хронология', orderCreated: 'Заказ создан', total: 'Итого', qty: 'Кол-во', openChat: 'Открыть чат' }
@@ -57,7 +57,7 @@ export default function SupplierOrderDetailScreen({ orderId, onBack, onOpenChat,
       if (!orderId) return;
       setLoading(true);
       try {
-        const o = await fetchOrderById(orderId);
+        const o = await orders.fetchOrderById(orderId);
         if (mounted) setOrder(o);
       } finally { if (mounted) setLoading(false); }
     })();

@@ -1,17 +1,27 @@
-const BASE = process.env.API_BASE || 'http://YOUR_API_BASE_HERE';
+import httpClient from './httpClient';
+import { setTokens } from './token';
 
-export async function registerConsumer(payload: { firstName?: string; lastName?: string; email: string; password: string }) {
-  const res = await fetch(`${BASE}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const err: any = new Error(body?.error || 'Registration failed');
-    err.status = res.status;
-    err.body = body;
-    throw err;
+export type SignupPayload = { firstName?: string; lastName?: string; email: string; password: string; role?: string };
+
+export async function registerConsumer(payload: SignupPayload) {
+  // Backend expects POST /auth/signup under /api/v1
+  const body = await httpClient.fetchJson('/auth/signup', { method: 'POST', body: JSON.stringify(payload) });
+  // backend returns access_token and refresh_token in response model; persist them for later use
+  if (body?.access_token) {
+    await setTokens(body.access_token, body.refresh_token ?? null);
   }
-  return res.json();
+  return body;
+}
+
+export async function login(email: string, password: string) {
+  const payload = { email, password };
+  const body = await httpClient.fetchJson('/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+  if (body?.access_token) {
+    await setTokens(body.access_token, body.refresh_token ?? null);
+  }
+  return body;
+}
+
+export async function logout() {
+  await setTokens(null, null);
 }

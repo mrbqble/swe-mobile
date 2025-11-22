@@ -3,8 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useChat } from '../../hooks/useChat';
-import { sendMessage, uploadAttachment } from '../../api/chat.mock';
-import { fetchOrderById } from '../../api/orders.mock';
+import { chat, orders } from '../../api';
 import { Image, Modal, TextInput as RNTextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -19,7 +18,7 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
     (async () => {
       if (!orderId) return;
       try {
-        const o = await fetchOrderById(orderId);
+        const o = await orders.fetchOrderById(orderId);
         if (mounted) setOrderInfo(o);
       } catch (e) {}
     })();
@@ -31,11 +30,11 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
   const handleSend = async () => {
     if (!orderId || text.trim().length === 0) return;
     const from = role === 'supplier' ? 'supplier' : 'consumer';
-    try {
-      await sendMessage(orderId, from, text.trim(), []);
-      setText('');
-      await refresh();
-    } catch (e) {}
+      try {
+        await chat.sendMessage(orderId, from, text.trim(), []);
+        setText('');
+        await refresh();
+      } catch (e) {}
   };
 
   // attachments modal state
@@ -48,11 +47,11 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
   const handleAttach = async () => {
     if (!orderId || !attUrl.trim()) { setAttModalVisible(false); return; }
     const from = role === 'supplier' ? 'supplier' : 'consumer';
-    try {
-      await sendMessage(orderId, from, attName || undefined, [{ url: attUrl.trim(), type: undefined }]);
-      setAttUrl(''); setAttName(''); setAttModalVisible(false);
-      await refresh();
-    } catch (e) { setAttModalVisible(false); }
+      try {
+        await chat.sendMessage(orderId, from, attName || undefined, [{ url: attUrl.trim(), type: undefined }]);
+        setAttUrl(''); setAttName(''); setAttModalVisible(false);
+        await refresh();
+      } catch (e) { setAttModalVisible(false); }
   };
 
   const pickImage = async () => {
@@ -63,18 +62,18 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
       const uri = (res as any)?.assets?.[0]?.uri || (res as any)?.uri;
       if (!uri) return;
       // upload to mock server to simulate backend storage
-      try {
-        const uploaded = await uploadAttachment(uri, undefined as any);
-        const from = role === 'supplier' ? 'supplier' : 'consumer';
-        // include previewUri so UI can render the local file immediately while URL is a hosted link
-        await sendMessage(orderId!, from, undefined, [{ url: uploaded.url, type: 'image', previewUri: uri }]);
-        await refresh();
-      } catch (e) {
-        // fallback to send local uri if upload fails
-        const from = role === 'supplier' ? 'supplier' : 'consumer';
-        await sendMessage(orderId!, from, undefined, [{ url: uri, type: 'image', previewUri: uri }]);
-        await refresh();
-      }
+        try {
+          const uploaded = await chat.uploadAttachment(uri as string);
+          const from = role === 'supplier' ? 'supplier' : 'consumer';
+          // include previewUri so UI can render the local file immediately while URL is a hosted link
+          await chat.sendMessage(orderId!, from, undefined, [{ url: uploaded.url, type: 'image', previewUri: uri }]);
+          await refresh();
+        } catch (e) {
+          // fallback to send local uri if upload fails
+          const from = role === 'supplier' ? 'supplier' : 'consumer';
+          await chat.sendMessage(orderId!, from, undefined, [{ url: uri, type: 'image', previewUri: uri }]);
+          await refresh();
+        }
       setAttModalVisible(false);
     } catch (e) { setAttModalVisible(false); }
   };

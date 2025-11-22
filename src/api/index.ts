@@ -1,5 +1,5 @@
-// Simple API adapter chooser. By default we use the mock adapter to allow frontend development without backend.
-const USE_MOCK = true; // change to false to use real HTTP adapter
+// Simple API adapter chooser. Set `USE_MOCK=true` to use in-memory mocks for UI-only development.
+const USE_MOCK = false;
 
 import * as CatalogMock from './catalog.mock';
 import * as CatalogHttp from './catalog.http';
@@ -17,6 +17,8 @@ import * as ComplaintsMock from './complaints.mock';
 import * as ComplaintsHttp from './complaints.http';
 import * as AuthMock from './auth.mock';
 import * as AuthHttp from './auth.http';
+import * as ChatMock from './chat.mock';
+import * as ChatHttp from './chat.http';
 
 export const catalog = USE_MOCK ? CatalogMock : CatalogHttp;
 export const product = USE_MOCK ? ProductMock : ProductHttp;
@@ -26,3 +28,4 @@ export const suppliers = USE_MOCK ? SuppliersMock : SuppliersHttp;
 export const orders = USE_MOCK ? OrdersMock : OrdersHttp;
 export const complaints = USE_MOCK ? ComplaintsMock : ComplaintsHttp;
 export const auth = USE_MOCK ? AuthMock : AuthHttp;
+export const chat = USE_MOCK ? ChatMock : ChatHttp;

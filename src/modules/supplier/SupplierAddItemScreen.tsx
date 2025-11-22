@@ -3,8 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadAttachment } from '../../api/chat.mock';
-import { addProduct } from '../../api/catalog.mock';
+import { chat, product } from '../../api';
 import { toastShow } from '../../helpers/toast';
 
 export default function SupplierAddItemScreen({ language = 'en', navigateTo, supplierName }: { language?: 'en' | 'ru'; navigateTo?: (s: string) => void; supplierName?: string }) {
@@ -58,7 +57,7 @@ export default function SupplierAddItemScreen({ language = 'en', navigateTo, sup
                 // upload to mock storage
                 setUploading(true);
                 try {
-                  const uploaded = await uploadAttachment(uri, undefined as any);
+                  const uploaded = await chat.uploadAttachment(uri as string);
                   setImageUri(uploaded.url);
                   try { toastShow('Uploaded', 'Image uploaded'); } catch (e) {}
                 } catch (e) {
@@ -77,7 +76,7 @@ export default function SupplierAddItemScreen({ language = 'en', navigateTo, sup
                 setImageUri(uri);
                 setUploading(true);
                 try {
-                  const uploaded = await uploadAttachment(uri, undefined as any);
+                  const uploaded = await chat.uploadAttachment(uri as string);
                   setImageUri(uploaded.url);
                   try { toastShow('Uploaded', 'Image uploaded'); } catch (e) {}
                 } catch (e) {
@@ -118,8 +117,8 @@ export default function SupplierAddItemScreen({ language = 'en', navigateTo, sup
         <TouchableOpacity disabled={!canSave || saving} onPress={async () => {
           if (!canSave) return;
           setSaving(true);
-          try {
-            const p = await addProduct({ name, price: Number(price), stock: Number(stock || 0), sku, description, imageUrl: imageUri || '', supplier: supplierName });
+            try {
+            const p = await (product as any).createProduct({ name, price: Number(price), stock: Number(stock || 0), sku, description, imageUrl: imageUri || '', supplierId: supplierName });
             try { toastShow('Product saved', 'The product has been added to your catalog.'); } catch (e) {}
             navigateTo && navigateTo('supplier-catalog');
           } catch (e) {

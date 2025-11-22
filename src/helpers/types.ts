@@ -21,3 +21,25 @@ export interface PaginatedResponse<T> {
     pages: number;
   };
 }
+
+export interface Supplier {
+  id: string | number;
+  name: string;
+  description?: string;
+  city?: string;
+  rating?: number;
+}
+
+export interface ChatMessage {
+  id: string | number;
+  threadId: string | number;
+  from: string;
+  text?: string;
+  attachments?: Array<{ url: string; type?: string; previewUri?: string }>;
+  ts: string;
+  delivered?: boolean;
+  read?: boolean;
+  system?: boolean;
+  severity?: 'info' | 'warning' | 'success' | 'error';
+}
+

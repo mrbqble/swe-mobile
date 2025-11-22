@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
-import { fetchLinkRequests, updateLinkRequestStatus } from '../../api/linkedSuppliers.mock';
+import { linkedSuppliers } from '../../api';
 import { toastShow } from '../../helpers/toast';
 import { emitter } from '../../helpers/events';
 
@@ -35,14 +35,14 @@ export default function SupplierRequestsScreen({ language = 'en', navigateTo, su
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const res = await fetchLinkRequests();
+      const res = await linkedSuppliers.fetchLinkRequests();
       if (mounted) setRequests(res || []);
     })();
     let unsub = () => {};
     if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
       unsub = emitter.on('linkRequestsChanged', async () => {
         try {
-          const res = await fetchLinkRequests();
+          const res = await linkedSuppliers.fetchLinkRequests();
           if (mounted) setRequests(res || []);
         } catch (e) {}
       });
@@ -53,7 +53,7 @@ export default function SupplierRequestsScreen({ language = 'en', navigateTo, su
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await fetchLinkRequests();
+      const res = await linkedSuppliers.fetchLinkRequests();
       setRequests(res || []);
     } catch (e) {
       // ignore
@@ -62,7 +62,7 @@ export default function SupplierRequestsScreen({ language = 'en', navigateTo, su
   };
 
   const handleApprove = async (item: any) => {
-    await updateLinkRequestStatus(item.id, 'approved');
+    await linkedSuppliers.updateLinkRequestStatus(item.id, 'approved');
     // remove processed request from the list
     setRequests((r) => r.filter((x) => x.id !== item.id));
     // show toast instead of Alert
@@ -70,7 +70,7 @@ export default function SupplierRequestsScreen({ language = 'en', navigateTo, su
   };
 
   const handleReject = async (item: any) => {
-    await updateLinkRequestStatus(item.id, 'rejected');
+    await linkedSuppliers.updateLinkRequestStatus(item.id, 'rejected');
     setRequests((r) => r.filter((x) => x.id !== item.id));
     try { toastShow(t.rejectedTitle, 'The consumer will see the updated status.'); } catch (e) { /* ignore */ }
   };

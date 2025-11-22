@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { fetchOrdersForConsumer } from '../../api/orders.mock';
+import { orders } from '../../api';
 import { emitter } from '../../helpers/events';
 
 const translations = {
@@ -19,7 +19,7 @@ const mockOrders = [
 
 export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOrderSelect, supplierName }: { language?: 'en' | 'ru'; navigateTo?: (s: string) => void; onOrderSelect?: (o: any) => void; supplierName?: string }) {
   const t = translations[language];
-  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersList, setOrders] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const formatPrice = (price: number) => new Intl.NumberFormat('kk-KZ').format(price);
@@ -27,14 +27,14 @@ export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOr
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const res = await fetchOrdersForConsumer(undefined, supplierName);
+      const res = await orders.fetchOrdersForConsumer(undefined, supplierName);
       if (mounted) setOrders(res || []);
     })();
     let unsub = () => {};
     if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
       unsub = emitter.on('ordersChanged', async () => {
         try {
-          const res = await fetchOrdersForConsumer(undefined, supplierName);
+          const res = await orders.fetchOrdersForConsumer(undefined, supplierName);
           if (mounted) setOrders(res || []);
         } catch (e) {}
       });
@@ -45,7 +45,7 @@ export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOr
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await fetchOrdersForConsumer(undefined, supplierName);
+      const res = await orders.fetchOrdersForConsumer(undefined, supplierName);
       setOrders(res || []);
     } catch (e) {}
     setRefreshing(false);
@@ -82,7 +82,7 @@ export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOr
       </View>
 
       <FlatList
-        data={orders}
+        data={ordersList}
         keyExtractor={(i) => String(i.id)}
         contentContainerStyle={{ padding: 16 }}
         renderItem={renderItem}

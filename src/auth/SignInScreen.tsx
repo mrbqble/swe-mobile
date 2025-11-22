@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { toastShow } from '../helpers/toast';
+import { auth } from '../api';
 
 type Language = 'en' | 'ru';
 
@@ -51,6 +52,7 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'consumer' | 'supplier' | null>(null);
+  const [loading, setLoading] = useState(false);
   const t = translations[language];
 
   const handleContinue = () => {
@@ -59,18 +61,20 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
       toastShow('Validation', 'All fields are required');
       return;
     }
-
-    // Placeholder for server-side verification. Backend team will replace this.
-    // For now we assume verification passes. If you want to simulate a failure,
-    // set `mockVerified` to false.
-    const mockVerified = true;
-
-    if (!mockVerified) {
-      toastShow('Error', 'Incorrect data inserted! Try again with correct role and credentials.');
-      return;
-    }
-
-    if (onSignIn) onSignIn(selectedRole);
+    // Call backend login and persist tokens via auth adapter
+    setLoading(true);
+    (async () => {
+      try {
+        // auth.login will throw on error
+        await (auth as any).login(email, password);
+        if (onSignIn) onSignIn(selectedRole);
+      } catch (err: any) {
+        const msg = err?.message || 'Sign in failed';
+        toastShow('Error', msg);
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (
@@ -123,8 +127,9 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
         <TouchableOpacity
           style={[styles.continueButton, (!selectedRole || !email || !password) && styles.continueButtonDisabled]}
           onPress={handleContinue}
+          disabled={loading}
         >
-          <Text style={styles.continueButtonText}>{t.continue}</Text>
+          <Text style={styles.continueButtonText}>{loading ? 'Please wait...' : t.continue}</Text>
         </TouchableOpacity>
         {/* Register link (consumers only) */}
         {typeof (onRegister) === 'function' && (

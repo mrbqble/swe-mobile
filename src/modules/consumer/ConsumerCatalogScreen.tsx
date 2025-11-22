@@ -34,8 +34,16 @@ const translations = {
 
 export default function ConsumerCatalogScreen({ language, navigateTo, onProductSelect }: ConsumerCatalogScreenProps) {
   const t = translations[language];
-  const { items, query, setQuery, loading, error, hasMore, loadMore, refresh } = useCatalog('');
   const { suppliers, loading: suppliersLoading } = useLinkedSuppliers();
+
+  // compute accepted supplier ids for this consumer
+  const acceptedSupplierIds = (suppliers || [])
+    .filter((s: any) => String(s.status).toLowerCase() === 'accepted')
+    .map((s: any) => s.supplier_id || s.supplierId || s.id);
+
+  // pass first accepted supplier id to catalog hook (mobile currently fetches per-supplier)
+  const firstSupplierId = acceptedSupplierIds.length > 0 ? acceptedSupplierIds[0] : undefined;
+  const { items, query, setQuery, loading, error, hasMore, loadMore, refresh } = useCatalog('', 20, firstSupplierId);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('kk-KZ').format(price);
@@ -61,7 +69,7 @@ export default function ConsumerCatalogScreen({ language, navigateTo, onProductS
   );
 
   // compute accepted supplier names for this consumer
-  const acceptedSuppliers = (suppliers || []).filter(s => String(s.status).toLowerCase() === 'accepted').map(s => String(s.name).toLowerCase());
+  const acceptedSuppliers = (suppliers || []).filter(s => String(s.status).toLowerCase() === 'accepted');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -109,7 +117,7 @@ export default function ConsumerCatalogScreen({ language, navigateTo, onProductS
         </View>
       ) : (
         <FlatList
-          data={items.filter(it => acceptedSuppliers.includes(String((it.supplier || '').toLowerCase())))}
+          data={items}
           keyExtractor={(i) => String(i.id)}
           numColumns={2}
           contentContainerStyle={{ padding: 12 }}

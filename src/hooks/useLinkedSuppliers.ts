@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import * as api from '../api/linkedSuppliers.mock';
-import { LinkedSupplier } from '../api/linkedSuppliers.mock';
+import { linkedSuppliers } from '../api';
+import { LinkedSupplier } from '../api/linkedSuppliers.http';
 import { emitter } from '../helpers/events';
 
 export function useLinkedSuppliers(consumerId?: string | number) {
-  const [suppliers, setSuppliers] = useState<LinkedSupplier[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<any>(null);
 
@@ -13,7 +13,7 @@ export function useLinkedSuppliers(consumerId?: string | number) {
     (async () => {
       setLoading(true);
       try {
-        const res = await api.fetchLinkedSuppliers(consumerId);
+        const res = await linkedSuppliers.fetchLinkedSuppliers(consumerId);
         if (mounted) setSuppliers(res || []);
       } catch (err) {
         if (mounted) setError(err);
@@ -23,7 +23,7 @@ export function useLinkedSuppliers(consumerId?: string | number) {
     if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
       unsub = emitter.on('linkedSuppliersChanged', async () => {
         try {
-          const res = await api.fetchLinkedSuppliers(consumerId);
+          const res = await linkedSuppliers.fetchLinkedSuppliers(consumerId);
           if (mounted) setSuppliers(res || []);
         } catch (e) { /* ignore */ }
       });
@@ -31,5 +31,5 @@ export function useLinkedSuppliers(consumerId?: string | number) {
     return () => { try { unsub(); } catch (e) {} mounted = false; };
   }, [consumerId]);
 
-  return { suppliers, loading, error, refresh: async () => { setLoading(true); try { const res = await api.fetchLinkedSuppliers(consumerId); setSuppliers(res || []); } finally { setLoading(false); } } };
+  return { suppliers, loading, error, refresh: async () => { setLoading(true); try { const res = await linkedSuppliers.fetchLinkedSuppliers(consumerId); setSuppliers(res || []); } finally { setLoading(false); } } };
 }

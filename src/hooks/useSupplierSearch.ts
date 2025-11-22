@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import * as api from '../api/suppliers.mock';
-import { Supplier } from '../api/suppliers.mock';
+import { suppliers as api } from '../api';
+import { Supplier } from '../helpers/types';
 
 export function useSupplierSearch(query: string) {
   const [results, setResults] = useState<Supplier[]>([]);

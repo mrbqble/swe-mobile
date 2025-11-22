@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import * as api from '../api/chat.mock';
+import { chat as api } from '../api';
 import { emitter } from '../helpers/events';
+import { ChatMessage } from '../helpers/types';
 
 export function useChat(threadId?: string | null, role?: string) {
-  const [messages, setMessages] = useState<api.ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -12,11 +13,11 @@ export function useChat(threadId?: string | null, role?: string) {
     (async () => {
       setLoading(true);
       try {
-        const m = await api.fetchMessages(threadId);
+        const m = await (api as any).fetchMessages(threadId);
         if (mounted) setMessages(m || []);
         // mark read for this role when opening
         if (role) {
-          try { await api.markThreadRead(threadId, role); } catch (e) {}
+          try { await (api as any).markThreadRead(threadId, role); } catch (e) {}
         }
       } finally { if (mounted) setLoading(false); }
     })();
@@ -25,7 +26,7 @@ export function useChat(threadId?: string | null, role?: string) {
     if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
       unsub = emitter.on(`chatChanged:${threadId}`, async () => {
         try {
-          const m = await api.fetchMessages(threadId);
+          const m = await (api as any).fetchMessages(threadId);
           if (mounted) setMessages(m || []);
         } catch (e) {}
       });

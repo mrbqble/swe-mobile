@@ -3,8 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useCart } from '../../hooks/useCart';
-import { product } from '../../api';
-import { placeOrderFromCart } from '../../api/orders.mock';
+import { product, orders } from '../../api';
 
 export default function ConsumerCartScreen({ onBack, navigateTo, language }: { onBack: () => void; navigateTo?: (screen: string) => void; language?: 'en' | 'ru' }) {
   const { items, totalQty, loading, load, add, remove, clear, update } = useCart();
@@ -148,7 +147,7 @@ export default function ConsumerCartScreen({ onBack, navigateTo, language }: { o
                 try {
                   const payload = detailed.map(d => ({ productId: d.productId, name: d.product?.name, price: Number(d.product?.price || 0), qty: d.qty }));
                   const total = detailed.reduce((s, it) => s + (Number(it.product?.price || 0) * Number(it.qty || 0)), 0);
-                  await placeOrderFromCart(payload, total);
+                  await orders.placeOrderFromCart(payload, total);
                   await clear();
                   setPlaceModalOpen(false);
                   // navigate to orders if provided
