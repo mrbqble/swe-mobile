@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import { styles } from '../../styles/consumer/ConsumerRequestLinkScreen.styles';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useSupplierSearch } from '../../hooks/useSupplierSearch';
+import { getTranslations, type Language } from '../../translations';
 import { linkedSuppliers } from '../../api';
 import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
@@ -11,11 +13,7 @@ export default function ConsumerRequestLinkScreen({ onBack, onSubmit, language }
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const { results, loading } = useSupplierSearch(query);
-  const t = {
-    en: { requestLink: 'Request Link', searchSuppliers: 'Search Suppliers', placeholder: 'Enter supplier name or company', submitRequest: 'Submit Request', loading: 'Loading...' },
-    ru: { requestLink: 'Запрос связи', searchSuppliers: 'Поиск поставщиков', placeholder: 'Введите название поставщика или компании', submitRequest: 'Отправить запрос', loading: 'Загрузка...' }
-  } as any;
-  const L = t[language ?? 'en'];
+  const L = getTranslations('consumer', 'requestLink', language ?? 'en');
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -74,7 +72,7 @@ export default function ConsumerRequestLinkScreen({ onBack, onSubmit, language }
           } catch (err: any) {
             try { toastShow('Error', err?.message || 'Could not submit link request'); } catch (e) {}
           }
-        }} style={[styles.submitBtn, !selected ? { backgroundColor: '#e5e7eb' } : {}]}> 
+        }} style={[styles.submitBtn, !selected ? { backgroundColor: '#e5e7eb' } : {}]}>
           <Text style={{ color: selected ? '#fff' : '#9ca3af', fontWeight: '700' }}>{L.submitRequest}</Text>
         </TouchableOpacity>
       </View>
@@ -82,12 +80,3 @@ export default function ConsumerRequestLinkScreen({ onBack, onSubmit, language }
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  searchBox: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, height: 44, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff' },
-  searchInput: { flex: 1, paddingHorizontal: 8, height: '100%' },
-  card: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', padding: 12, marginBottom: 12 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#eff6ff', alignItems: 'center', justifyContent: 'center' },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-  submitBtn: { padding: 12, borderRadius: 8, backgroundColor: '#2563eb', alignItems: 'center' }
-});

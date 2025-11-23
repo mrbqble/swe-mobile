@@ -1,22 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Image } from 'react-native';
+import { styles } from '../../styles/supplier/SupplierCatalogScreen.styles';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { catalog } from '../../api';
 import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
 import StockEditModal from './StockEditModal';
-
-const translations = {
-  en: { catalog: 'Catalog', search: 'Search products...', addItem: 'Add Item', noProducts: 'No products yet', noProductsDesc: 'Start building your catalog by adding your first product', inStock: 'In Stock', outOfStock: 'Out of Stock', currency: '₸', edit: 'Edit', delete: 'Delete' },
-  ru: { catalog: 'Каталог', search: 'Поиск товаров...', addItem: 'Добавить товар', noProducts: 'Товаров пока нет', noProductsDesc: 'Начните создание каталога, добавив первый товар', inStock: 'В наличии', outOfStock: 'Нет в наличии', currency: '₸', edit: 'Редактировать', delete: 'Удалить' }
-} as const;
+import { getTranslations, type Language } from '../../translations';
+import { formatPrice } from '../../utils/formatters';
 
 export default function SupplierCatalogScreen({ language = 'en', navigateTo, supplierName }: { language?: 'en' | 'ru'; navigateTo?: (s: string) => void; supplierName?: string }) {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const t = translations[language];
+  const t = getTranslations('supplier', 'catalog', language);
 
   useEffect(() => {
     let mounted = true;
@@ -91,7 +89,7 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
           </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, alignItems: 'center' }}>
-            <Text style={{ color: '#2563eb', fontWeight: '700' }}>{t.currency}{new Intl.NumberFormat('kk-KZ').format(item.price)}</Text>
+            <Text style={{ color: '#2563eb', fontWeight: '700' }}>{formatPrice(item.price, t.currency)}</Text>
             {item.stock > 0 ? (
               <View style={styles.inStock}><Text style={{ color: '#059669' }}>{t.inStock} ({item.stock})</Text></View>
             ) : (
@@ -147,13 +145,3 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#2563eb', alignItems: 'center', justifyContent: 'center' },
-  searchBox: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, height: 44, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff' },
-  searchInput: { flex: 1, paddingHorizontal: 8, height: '100%' },
-  card: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', padding: 12, marginBottom: 12 },
-  thumb: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#f3f4f6' },
-  inStock: { backgroundColor: '#ecfdf5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  outStock: { backgroundColor: '#fff7f7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }
-});

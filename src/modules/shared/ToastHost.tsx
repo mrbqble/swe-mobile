@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import { View, Text, Animated } from 'react-native';
+import { styles } from '../../styles/shared/ToastHost.styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toastBus } from '../../helpers/toast';
 
@@ -10,10 +11,10 @@ export default function ToastHost() {
   useEffect(() => {
     const unsub = toastBus.subscribe((t) => {
       setToasts((s) => [...s, t]);
-      // auto remove after 2500ms
+      // auto remove after configured duration
       setTimeout(() => {
         setToasts((s) => s.filter(x => x.id !== t.id));
-      }, 2500);
+      }, TIMING.TOAST_DURATION);
     });
     return unsub;
   }, []);
@@ -32,9 +33,3 @@ export default function ToastHost() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  toast: { backgroundColor: '#111827', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, maxWidth: '92%' },
-  title: { color: '#fff', fontWeight: '700', marginBottom: 4 },
-  message: { color: '#fff' }
-});

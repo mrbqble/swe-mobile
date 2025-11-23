@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { styles } from '../../styles/consumer/ConsumerCatalogScreen.styles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
-
 import { useCatalog } from '../../hooks/useCatalog';
 import { useLinkedSuppliers } from '../../hooks/useLinkedSuppliers';
 import { Product } from '../../helpers/types';
+import { getTranslations, type Language } from '../../translations';
+import { formatPrice } from '../../utils/formatters';
+import { PAGINATION } from '../../constants';
 
 interface ConsumerCatalogScreenProps {
   language: 'en' | 'ru';
@@ -13,41 +16,19 @@ interface ConsumerCatalogScreenProps {
   onProductSelect: (product: Product) => void;
 }
 
-const translations = {
-  en: {
-    catalog: 'Catalog',
-    search: 'Search products...',
-    inStock: 'In Stock',
-    outOfStock: 'Out of Stock',
-    currency: '₸'
-  },
-  ru: {
-    catalog: 'Каталог',
-    search: 'Поиск товаров...',
-    inStock: 'В наличии',
-    outOfStock: 'Нет в наличии',
-    currency: '₸'
-  }
-};
-
-// useCatalog provides items, loading, error, pagination helpers
-
 export default function ConsumerCatalogScreen({ language, navigateTo, onProductSelect }: ConsumerCatalogScreenProps) {
-  const t = translations[language];
+  const t = getTranslations('consumer', 'catalog', language || 'en');
   const { suppliers, loading: suppliersLoading } = useLinkedSuppliers();
 
   // compute accepted supplier ids for this consumer
   const acceptedSupplierIds = (suppliers || [])
-    .filter((s: any) => String(s.status).toLowerCase() === 'accepted')
+    .filter((s: any) => String(s.status).toLowerCase() === LINK_STATUS.ACCEPTED.toLowerCase())
     .map((s: any) => s.supplier_id || s.supplierId || s.id);
 
   // pass first accepted supplier id to catalog hook (mobile currently fetches per-supplier)
   const firstSupplierId = acceptedSupplierIds.length > 0 ? acceptedSupplierIds[0] : undefined;
-  const { items, query, setQuery, loading, error, hasMore, loadMore, refresh } = useCatalog('', 20, firstSupplierId);
+  const { items, query, setQuery, loading, error, hasMore, loadMore, refresh } = useCatalog('', PAGINATION.CATALOG_PAGE_SIZE, firstSupplierId);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('kk-KZ').format(price);
-  };
 
   const renderItem = ({ item }: { item: Product }) => (
     <TouchableOpacity style={styles.card} onPress={() => onProductSelect(item)}>
@@ -61,7 +42,7 @@ export default function ConsumerCatalogScreen({ language, navigateTo, onProductS
         <Text numberOfLines={2} style={styles.productName}>{item.name}</Text>
         <Text style={styles.supplier}>{item.supplier}</Text>
         <View style={styles.rowBetween}>
-          <Text style={styles.price}>{t.currency}{formatPrice(item.price)}</Text>
+          <Text style={styles.price}>{formatPrice(item.price, t.currency)}</Text>
           {item.stock > 0 && <Text style={styles.inStock}>{t.inStock}</Text>}
         </View>
       </View>
@@ -69,7 +50,7 @@ export default function ConsumerCatalogScreen({ language, navigateTo, onProductS
   );
 
   // compute accepted supplier names for this consumer
-  const acceptedSuppliers = (suppliers || []).filter(s => String(s.status).toLowerCase() === 'accepted');
+  const acceptedSuppliers = (suppliers || []).filter(s => String(s.status).toLowerCase() === LINK_STATUS.ACCEPTED.toLowerCase());
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -132,99 +113,3 @@ export default function ConsumerCatalogScreen({ language, navigateTo, onProductS
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: '#111827',
-    fontWeight: '600'
-  },
-  searchWrap: {
-    margin: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 40,
-    paddingRight: 8,
-    backgroundColor: '#fff'
-  },
-  searchInput: {
-    flex: 1,
-    paddingHorizontal: 8,
-    height: '100%'
-  },
-  card: {
-    flex: 1,
-    margin: 6,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    overflow: 'hidden'
-  },
-  image: {
-    width: '100%',
-    height: 120,
-    resizeMode: 'cover'
-  },
-  outOfStockOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  outOfStockText: {
-    color: '#fff',
-    backgroundColor: '#dc2626',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    fontSize: 12
-  },
-  cardBody: {
-    padding: 10
-  },
-  productName: {
-    fontSize: 14,
-    color: '#111827',
-    marginBottom: 4,
-    fontWeight: '600'
-  },
-  supplier: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 6
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  price: {
-    color: '#2563eb',
-    fontWeight: '700'
-  },
-  inStock: {
-    fontSize: 12,
-    color: '#059669',
-    backgroundColor: '#ecfdf5',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 6
-  }
-});

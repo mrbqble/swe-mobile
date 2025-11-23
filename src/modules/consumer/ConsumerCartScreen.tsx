@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useCart } from '../../hooks/useCart';
 import { product, orders } from '../../api';
+import { styles } from '../../styles/consumer/ConsumerCartScreen.styles';
+import { getTranslations, type Language } from '../../translations';
+import { formatPrice } from '../../utils/formatters';
+import { DELIVERY_METHOD, type DeliveryMethod } from '../../constants';
 
 export default function ConsumerCartScreen({ onBack, navigateTo, language }: { onBack: () => void; navigateTo?: (screen: string) => void; language?: 'en' | 'ru' }) {
   const { items, totalQty, loading, load, add, remove, clear, update } = useCart();
-  const t = {
-    en: { cart: 'Cart', total: 'Total', delivery: 'Delivery Method', clear: 'Clear', placeOrder: 'Place Order' },
-    ru: { cart: 'Корзина', total: 'Итого', delivery: 'Способ доставки', clear: 'Очистить', placeOrder: 'Оформить заказ' }
-  } as any;
-  const [deliveryMethod, setDeliveryMethod] = useState<'Pickup' | 'Delivery'>('Pickup');
+  const t = getTranslations('consumer', 'cart', language || 'en');
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(DELIVERY_METHOD.PICKUP);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [placeModalOpen, setPlaceModalOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -89,8 +90,8 @@ export default function ConsumerCartScreen({ onBack, navigateTo, language }: { o
                 </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: '#2563eb', fontWeight: '700' }}>{item.product ? `₸${new Intl.NumberFormat('kk-KZ').format(item.product.price)}` : ''}</Text>
-                <Text style={{ color: '#6b7280', marginTop: 6 }}>{item.product ? `Subtotal: ₸${new Intl.NumberFormat('kk-KZ').format(Number(item.product.price || 0) * Number(item.qty || 0))}` : ''}</Text>
+                <Text style={{ color: '#2563eb', fontWeight: '700' }}>{item.product ? formatPrice(item.product.price) : ''}</Text>
+                <Text style={{ color: '#6b7280', marginTop: 6 }}>{item.product ? `Subtotal: ${formatPrice(Number(item.product.price || 0) * Number(item.qty || 0))}` : ''}</Text>
               </View>
             </View>
           )}
@@ -107,7 +108,7 @@ export default function ConsumerCartScreen({ onBack, navigateTo, language }: { o
       <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#f3f4f6' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
           <Text style={{ color: '#6b7280' }}>Total</Text>
-          <Text style={{ color: '#2563eb', fontWeight: '700' }}>{`₸${new Intl.NumberFormat('kk-KZ').format(detailed.reduce((s, it) => s + (Number(it.product?.price || 0) * Number(it.qty || 0)), 0))}`}</Text>
+          <Text style={{ color: '#2563eb', fontWeight: '700' }}>{formatPrice(detailed.reduce((s, it) => s + (Number(it.product?.price || 0) * Number(it.qty || 0)), 0))}</Text>
         </View>
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity onPress={() => clear()} style={[styles.clearBtn, { flex: 1, marginRight: 8 }]}><Text style={{ color: '#fff' }}>Clear</Text></TouchableOpacity>
@@ -119,11 +120,11 @@ export default function ConsumerCartScreen({ onBack, navigateTo, language }: { o
         <SafeAreaView style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
           <View style={{ margin: 24, backgroundColor: '#fff', borderRadius: 12, padding: 16 }}>
             <Text style={{ fontWeight: '700', marginBottom: 12 }}>Delivery Method</Text>
-            <TouchableOpacity onPress={() => { setDeliveryMethod('Pickup'); setDeliveryModalOpen(false); }} style={{ paddingVertical: 12 }}>
-              <Text>Pickup</Text>
+            <TouchableOpacity onPress={() => { setDeliveryMethod(DELIVERY_METHOD.PICKUP); setDeliveryModalOpen(false); }} style={{ paddingVertical: 12 }}>
+              <Text>{DELIVERY_METHOD.PICKUP}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setDeliveryMethod('Delivery'); setDeliveryModalOpen(false); }} style={{ paddingVertical: 12 }}>
-              <Text>Delivery</Text>
+            <TouchableOpacity onPress={() => { setDeliveryMethod(DELIVERY_METHOD.DELIVERY); setDeliveryModalOpen(false); }} style={{ paddingVertical: 12 }}>
+              <Text>{DELIVERY_METHOD.DELIVERY}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setDeliveryModalOpen(false)} style={{ paddingVertical: 12 }}>
               <Text style={{ color: '#6b7280' }}>Cancel</Text>
@@ -167,13 +168,3 @@ export default function ConsumerCartScreen({ onBack, navigateTo, language }: { o
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  row: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', alignItems: 'center' },
-  img: { width: 72, height: 72, borderRadius: 8 },
-  imgPlaceholder: { width: 72, height: 72, borderRadius: 8, backgroundColor: '#f3f4f6' },
-  footer: { padding: 16, flexDirection: 'row', justifyContent: 'space-between' },
-  clearBtn: { backgroundColor: '#ef4444', padding: 12, borderRadius: 8, flex: 1, marginRight: 8, alignItems: 'center' },
-  checkoutBtn: { backgroundColor: '#2563eb', padding: 12, borderRadius: 8, flex: 1, marginLeft: 8, alignItems: 'center' }
-});

@@ -1,11 +1,15 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Modal } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { styles } from '../../styles/consumer/ConsumerProductDetailScreen.styles';
 import { Feather } from '@expo/vector-icons';
 import { useProduct } from '../../hooks/useProduct';
 import { useCart } from '../../hooks/useCart';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getTranslations, type Language } from '../../translations';
+import { formatPrice } from '../../utils/formatters';
+import { TIMING } from '../../constants';
 
 interface Props {
   productId: number | string | null;
@@ -27,15 +31,8 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
   const increment = () => setQty((q) => Math.min((item?.stock ?? 9999), q + 1));
   const decrement = () => setQty((q) => Math.max(1, q - 1));
 
-  const t = {
-    en: { inStock: 'In Stock', outOfStock: 'Out of stock', specs: 'Specifications', quantity: 'Quantity', add: 'Add to Order', back: 'Back to catalog' },
-    ru: { inStock: 'В наличии', outOfStock: 'Нет в наличии', specs: 'Характеристики', quantity: 'Количество', add: 'Добавить в заказ', back: 'Назад в каталог' }
-  } as any;
+  const t = getTranslations('consumer', 'productDetail', language || 'en');
 
-  const formatPrice = (price?: number) => {
-    if (price == null) return '';
-    try { return new Intl.NumberFormat('kk-KZ').format(price); } catch { return String(price); }
-  };
 
   if (!productId) return (
     <SafeAreaView style={styles.center}>
@@ -72,7 +69,7 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
         <Text style={styles.title}>{item?.name}</Text>
         <Text style={styles.supplier}>{item?.supplier}</Text>
         <View style={styles.rowBetweenLarge}>
-          <Text style={styles.price}>{item?.currency ?? '₸'}{formatPrice(item?.price)}</Text>
+          <Text style={styles.price}>{formatPrice(item?.price, item?.currency ?? '₸')}</Text>
           <View style={styles.stockBadge}>
             <Text style={styles.stockBadgeText}>{item?.stock && item.stock > 0 ? `In Stock (${item.stock})` : 'Out of stock'}</Text>
           </View>
@@ -106,7 +103,7 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
             if (typeof item.stock === 'number' && qty > item.stock) {
               setToastMessage(`Cannot add more than ${item.stock} items`);
               setShowToast(true);
-              setTimeout(() => setShowToast(false), 2500);
+              setTimeout(() => setShowToast(false), TIMING.TOAST_DURATION);
               return;
             }
             await add(item.id, qty);
@@ -124,7 +121,7 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
         </TouchableOpacity>
       </ScrollView>
       {showToast && (
-        <View style={[styles.toast, { bottom: insets.bottom + 16 }]}> 
+        <View style={[styles.toast, { bottom: insets.bottom + 16 }]}>
           <Text style={{ color: '#fff' }}>{toastMessage}</Text>
         </View>
       )}
@@ -141,32 +138,3 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  image: { width: '100%', height: 220, borderRadius: 8 },
-  title: { fontSize: 20, fontWeight: '700', marginTop: 12 },
-  supplier: { color: '#6b7280', marginTop: 6 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  rowBetweenLarge: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, alignItems: 'flex-start' },
-  price: { fontSize: 18, color: '#2563eb', fontWeight: '700' },
-  addBtn: { marginTop: 20, backgroundColor: '#2563eb', padding: 12, borderRadius: 8 },
-  stockBadge: { backgroundColor: '#ecfdf5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  stockBadgeText: { color: '#059669', fontSize: 12, fontWeight: '600' },
-  specRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  specKey: { color: '#6b7280' },
-  specVal: { fontWeight: '600' },
-  qtyRow: { flexDirection: 'row', alignItems: 'center' },
-  qtyBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' },
-  qtyDisplay: { minWidth: 56, alignItems: 'center', justifyContent: 'center' }
-  ,
-  toast: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 8,
-    backgroundColor: '#111827',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center'
-  }
-});

@@ -1,8 +1,9 @@
 import { Product, PaginatedResponse } from '../helpers/types';
 import httpClient from './httpClient';
+import { PAGINATION } from '../constants';
 
 // Normalize backend pagination/field names to the mobile app's expected shape
-export async function fetchCatalog({ supplier_id, page = 1, size = 20 }:
+export async function fetchCatalog({ supplier_id, page = 1, size = PAGINATION.CATALOG_PAGE_SIZE }:
   { supplier_id?: number | string; page?: number; size?: number }
 ): Promise<PaginatedResponse<Product>> {
   const q = new URLSearchParams();

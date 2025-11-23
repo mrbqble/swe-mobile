@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { styles } from '../../styles/supplier/SupplierOrdersScreen.styles';
 import { Feather } from '@expo/vector-icons';
 import { orders } from '../../api';
 import { emitter } from '../../helpers/events';
-
-const translations = {
-  en: { orders: 'Orders', noOrders: 'No orders yet', noOrdersDesc: 'Customer orders will appear here', order: 'Order', customer: 'Customer', currency: '₸', items: 'items' },
-  ru: { orders: 'Заказы', noOrders: 'Заказов пока нет', noOrdersDesc: 'Заказы клиентов будут отображаться здесь', order: 'Заказ', customer: 'Клиент', currency: '₸', items: 'товаров' }
-} as const;
+import { getTranslations, type Language } from '../../translations';
+import { formatPrice } from '../../utils/formatters';
 
 export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOrderSelect, supplierName }: { language?: 'en' | 'ru'; navigateTo?: (s: string) => void; onOrderSelect?: (o: any) => void; supplierName?: string }) {
-  const t = translations[language];
+  const t = getTranslations('supplier', 'orders', language);
   const [ordersList, setOrders] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('kk-KZ').format(price);
 
   useEffect(() => {
     let mounted = true;
@@ -57,7 +54,7 @@ export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOr
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
         <Text style={{ color: '#6b7280' }}>{item.date}</Text>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={{ color: '#2563eb', fontWeight: '700' }}>{t.currency}{formatPrice(item.total)}</Text>
+          <Text style={{ color: '#2563eb', fontWeight: '700' }}>{formatPrice(item.total, t.currency)}</Text>
           <Text style={{ color: '#6b7280', fontSize: 12 }}>{item.itemCount} {t.items}</Text>
         </View>
       </View>
@@ -92,9 +89,3 @@ export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOr
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  card: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', padding: 12, marginBottom: 12 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusPill: { backgroundColor: '#ecfdf5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }
-});

@@ -1,7 +1,9 @@
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
+import { styles } from '../../styles/consumer/ConsumerProfileScreen.styles'
 import { User } from '../../api/user.http'
+import { getTranslations, type Language } from '../../translations'
 
 export default function ConsumerProfileScreen({
 	user,
@@ -10,39 +12,13 @@ export default function ConsumerProfileScreen({
 	onLogout,
 	onBack
 }: {
-	user: User
+	user: User | undefined
 	language: 'en' | 'ru'
 	setLanguage: (l: 'en' | 'ru') => void
 	onLogout: () => void
 	onBack?: () => void
 }) {
-	const t = {
-		en: {
-			profile: 'Profile',
-			personalInformation: 'Personal Information',
-			name: 'Name',
-			organization: 'Organization',
-			email: 'Email',
-			settings: 'Settings',
-			languageLabel: 'Language',
-			logout: 'Logout',
-			english: 'English',
-			russian: 'Русский'
-		},
-		ru: {
-			profile: 'Профиль',
-			personalInformation: 'Личная информация',
-			name: 'Имя',
-			organization: 'Организация',
-			email: 'Эл. почта',
-			settings: 'Настройки',
-			languageLabel: 'Язык',
-			logout: 'Выйти',
-			english: 'English',
-			russian: 'Русский'
-		}
-	} as any
-	const L = t[language ?? 'en']
+	const L = getTranslations('consumer', 'profile', language ?? 'en')
 
 	console.log(user)
 
@@ -78,7 +54,7 @@ export default function ConsumerProfileScreen({
 				</View> */}
 				<View style={styles.infoCard}>
 					<Text style={{ color: '#6b7280' }}>{L.email}</Text>
-					<Text style={{ marginTop: 6, fontWeight: '600' }}>{user.email}</Text>
+					<Text style={{ marginTop: 6, fontWeight: '600' }}>{user?.email}</Text>
 				</View>
 
 				<Text style={{ fontWeight: '700', marginTop: 16, marginBottom: 8 }}>{L.settings}</Text>
@@ -107,11 +83,3 @@ export default function ConsumerProfileScreen({
 		</SafeAreaView>
 	)
 }
-
-const styles = StyleSheet.create({
-	header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', alignItems: 'center' },
-	avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
-	infoCard: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#eaeef3', padding: 12, marginBottom: 12 },
-	langBtn: { backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-	logoutBtn: { marginTop: 20, borderWidth: 1, borderColor: '#fee2e2', backgroundColor: '#fff', padding: 12, borderRadius: 8, alignItems: 'center' }
-})

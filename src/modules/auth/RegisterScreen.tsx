@@ -1,30 +1,10 @@
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { toastShow } from '../helpers/toast'
-import { auth } from '../api'
-
-type Language = 'en' | 'ru'
-
-const translations: Record<Language, any> = {
-	en: {
-		title: 'Register',
-		name: 'Full name',
-		email: 'Email',
-		password: 'Password',
-		register: 'Create account',
-		haveAccount: 'Already have an account? Sign in'
-	},
-	ru: {
-		title: '\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f',
-		name: '\u041f\u043e\u043b\u043d\u043e\u0435 \u0438\u043c\u044f',
-		email: 'Email',
-		password: '\u041f\u0430\u0440\u043e\u043b\u044c',
-		register: '\u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c',
-		haveAccount:
-			'\u0415\u0441\u043b\u0438 \u0443 \u0412\u0430\u0441 \u0435\u0441\u0442\u044c \u0430\u043a\u043a\u0430\u0443\u043d\u0442? \u0412\u043e\u0439\u0442\u0435\u0020\u0432\u0445\u043e\u0434'
-	}
-}
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { toastShow } from '../../helpers/toast'
+import { auth } from '../../api'
+import { styles } from '../../styles/auth/RegisterScreen.styles'
+import { getTranslations, type Language } from '../../translations'
 
 interface Props {
 	language?: Language
@@ -33,7 +13,7 @@ interface Props {
 }
 
 export default function RegisterScreen({ language = 'en', onRegistered, onCancel }: Props) {
-	const t = translations[language]
+	const t = getTranslations('auth', 'register', language)
 	const [firstName, setFirstName] = useState('')
 	const [lastName, setLastName] = useState('')
 	const [email, setEmail] = useState('')
@@ -168,14 +148,3 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 		</SafeAreaView>
 	)
 }
-
-const styles = StyleSheet.create({
-	header: { paddingTop: 56, paddingBottom: 16, alignItems: 'center' },
-	title: { fontSize: 20, fontWeight: '600' },
-	body: { padding: 24, flex: 1 },
-	label: { fontSize: 14, color: '#374151', marginBottom: 6 },
-	input: { height: 48, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb', paddingHorizontal: 12, backgroundColor: '#fff', marginBottom: 8 },
-	footer: { padding: 24, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-	button: { height: 48, borderRadius: 8, backgroundColor: '#2563eb', alignItems: 'center', justifyContent: 'center' },
-	buttonText: { color: '#fff', fontWeight: '600' }
-})

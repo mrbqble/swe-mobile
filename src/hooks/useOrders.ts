@@ -1,37 +1,28 @@
-import { useEffect, useState } from 'react';
-import { orders as ordersApi } from '../api';
+import { orders as ordersApi } from '../api'
+import { useAsync } from './useAsync'
+
+function extractOrdersItems(res: any): any[] {
+	return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : res?.data || []
+}
+
+async function fetchOrders(consumerId?: string | number) {
+	const res = (ordersApi as any).fetchOrdersForConsumer
+		? await (ordersApi as any).fetchOrdersForConsumer(consumerId)
+		: await (ordersApi as any).listOrders({})
+	return extractOrdersItems(res)
+}
 
 export function useOrders(consumerId?: string | number) {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+	const { data, loading, error, execute } = useAsync<any[]>({
+		fn: () => fetchOrders(consumerId),
+		dependencies: [consumerId],
+		transform: (items) => items || []
+	})
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await (ordersApi as any).fetchOrdersForConsumer
-          ? await (ordersApi as any).fetchOrdersForConsumer(consumerId)
-          : await (ordersApi as any).listOrders({});
-        // some adapters return paginated responses, extract items if present
-        const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : res?.data || [];
-        if (mounted) setOrders(items || []);
-      } catch (err) {
-        if (mounted) setError(err);
-      } finally { if (mounted) setLoading(false); }
-    })();
-    return () => { mounted = false; };
-  }, [consumerId]);
-
-  return { orders, loading, error, refresh: async () => {
-    setLoading(true);
-    try {
-      const res = await (ordersApi as any).fetchOrdersForConsumer
-        ? await (ordersApi as any).fetchOrdersForConsumer(consumerId)
-        : await (ordersApi as any).listOrders({});
-      const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : res?.data || [];
-      setOrders(items || []);
-    } finally { setLoading(false); }
-  } };
+	return {
+		orders: data || [],
+		loading,
+		error,
+		refresh: execute
+	}
 }

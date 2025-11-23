@@ -1,15 +1,12 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { styles } from '../../styles/supplier/SupplierProfileScreen.styles';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
-
-const translations = {
-  en: { profile: 'Profile', organizationInfo: 'Organization Information', companyName: 'Company Name', address: 'Address', phone: 'Phone', email: 'Email', website: 'Website', language: 'Language', english: 'English', russian: 'Russian', logout: 'Logout', settings: 'Settings' },
-  ru: { profile: 'Профиль', organizationInfo: 'Информация об организации', companyName: 'Название компании', address: 'Адрес', phone: 'Телефон', email: 'Email', website: 'Веб-сайт', language: 'Язык', english: 'English', russian: 'Русский', logout: 'Выйти', settings: 'Настройки' }
-} as const;
+import { getTranslations, type Language } from '../../translations';
 
 export default function SupplierProfileScreen({ language = 'en', onLanguageChange, onLogout, navigateTo, supplierName }: { language?: 'en' | 'ru'; onLanguageChange?: (l: 'en' | 'ru') => void; onLogout?: () => void; navigateTo?: (s: string) => void; supplierName?: string }) {
-  const t = translations[language];
+  const t = getTranslations('supplier', 'profile', language);
 
   const org = {
     name: supplierName || 'TechPro Supply',
@@ -43,7 +40,7 @@ export default function SupplierProfileScreen({ language = 'en', onLanguageChang
         <View style={styles.infoCard}><Text style={{ color: '#6b7280' }}>{t.website}</Text><Text style={{ marginTop: 6, fontWeight: '600' }}>{org.website}</Text></View>
 
         <Text style={{ fontWeight: '700', marginTop: 16, marginBottom: 8 }}>{t.settings}</Text>
-        <View style={[styles.infoCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}> 
+        <View style={[styles.infoCard, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Feather name="globe" size={18} color="#9ca3af" />
             <Text style={{ marginLeft: 8 }}>{t.language}</Text>
@@ -61,10 +58,3 @@ export default function SupplierProfileScreen({ language = 'en', onLanguageChang
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', alignItems: 'center' },
-  avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
-  infoCard: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#eaeef3', padding: 12, marginBottom: 12 },
-  langBtn: { backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  logoutBtn: { marginTop: 20, borderWidth: 1, borderColor: '#fee2e2', backgroundColor: '#fff', padding: 12, borderRadius: 8, alignItems: 'center' }
-});

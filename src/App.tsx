@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View } from 'react-native'
-import SignInScreen from './auth/SignInScreen'
-import RegisterScreen from './auth/RegisterScreen'
-import LanguagePickerScreen from './auth/LanguagePickerScreen'
+import SignInScreen from './modules/auth/SignInScreen'
+import RegisterScreen from './modules/auth/RegisterScreen'
+import LanguagePickerScreen from './modules/auth/LanguagePickerScreen'
 import ConsumerHomeScreen from './modules/consumer/ConsumerHomeScreen'
 import SupplierHomeScreen from './modules/supplier/SupplierHomeScreen'
 import SupplierRequestsScreen from './modules/supplier/SupplierRequestsScreen'
@@ -273,10 +273,10 @@ export default function App() {
 						onBack={() => setConsumerScreen('linked-suppliers')}
 						onSubmit={async (supplierId) => {
 							try {
-							// call API adapter to create a link request
-							await (linkedSuppliers as any).addLinkRequest(supplierId)
-						} catch (err) {
-							// handle errors appropriately
+								// call API adapter to create a link request
+								await (linkedSuppliers as any).addLinkRequest(supplierId)
+							} catch (err) {
+								// handle errors appropriately
 							}
 							// after submit, navigate back to linked suppliers which will re-fetch the list
 							setConsumerScreen('linked-suppliers')

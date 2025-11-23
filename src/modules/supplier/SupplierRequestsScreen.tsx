@@ -4,35 +4,16 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
-  StyleSheet
+  TouchableOpacity
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { linkedSuppliers } from '../../api'
 import { emitter } from '../../helpers/events'
 import { toastShow } from '../../helpers/toast'
+import { styles } from '../../styles/supplier/SupplierRequestsScreen.styles'
+import { formatDate } from '../../utils/formatters'
 
-const translations = {
-  en: {
-    linkRequests: 'Link Requests',
-    noRequests: 'No pending requests',
-    noRequestsDesc: 'New connection requests will appear here',
-    approve: 'Approve',
-    reject: 'Reject',
-    approvedTitle: 'Request approved!',
-    rejectedTitle: 'Request rejected!'
-  },
-  ru: {
-    linkRequests: 'Запросы на связь',
-    noRequests: 'Ожидающих запросов нет',
-    noRequestsDesc: 'Новые запросы на соединение будут отображаться здесь',
-    approve: 'Одобрить',
-    reject: 'Отклонить',
-    approvedTitle: 'Запрос одобрен!',
-    rejectedTitle: 'Запрос отклонён!'
-  }
-} as const
 
 export default function SupplierRequestsScreen({
   language = 'en',
@@ -43,7 +24,7 @@ export default function SupplierRequestsScreen({
   navigateTo?: (s: string) => void
   supplierName?: string
 }) {
-  const t = translations[language]
+  const t = getTranslations('supplier', 'requests', language)
   const [requests, setRequests] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
@@ -104,7 +85,7 @@ export default function SupplierRequestsScreen({
   }
 
   const handleReject = async (item: any) => {
-    await linkedSuppliers.updateLinkRequestStatus(item.id, 'rejected')
+    await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.REJECTED)
     setRequests((r) => r.filter((x) => x.id !== item.id))
     try {
       toastShow(t.rejectedTitle, 'The consumer will see the updated status.')
@@ -124,7 +105,7 @@ export default function SupplierRequestsScreen({
           <Text style={{ fontWeight: '700' }}>{item.consumer?.organization_name || item.name || item.organization || 'Consumer'}</Text>
           <Text style={{ color: '#6b7280', marginTop: 4 }}>{item.consumer?.organization_name || ''}</Text>
           <Text style={{ color: '#9ca3af', marginTop: 4, fontSize: 12 }}>{/* email not exposed by default */ ''}</Text>
-          <Text style={{ color: '#9ca3af', marginTop: 6, fontSize: 12 }}>{item.created_at ? new Date(item.created_at).toLocaleString() : ''}</Text>
+          <Text style={{ color: '#9ca3af', marginTop: 6, fontSize: 12 }}>{formatDate(item.created_at)}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row', marginTop: 12, gap: 12 }}>
@@ -181,47 +162,3 @@ export default function SupplierRequestsScreen({
   )
 }
 
-const styles = StyleSheet.create({
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: '#eff6ff',
-    borderRadius: 22,
-    height: 44,
-    justifyContent: 'center',
-    width: 44
-  },
-  buttonOutline: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderColor: '#fee2e2',
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 12
-  },
-  buttonPrimary: {
-    alignItems: 'center',
-    backgroundColor: '#16a34a',
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 12
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-    padding: 12
-  },
-  header: {
-    alignItems: 'center',
-    borderBottomColor: '#f3f4f6',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16
-  }
-})

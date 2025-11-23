@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { styles } from '../../styles/supplier/SupplierComplaintDetailScreen.styles';
 import { Feather } from '@expo/vector-icons';
 import { complaints, orders } from '../../api';
 import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
+import { formatDateOnly } from '../../utils/formatters';
+import { COMPLAINT_STATUS } from '../../constants';
 
 export default function SupplierComplaintDetailScreen({ complaintId, onBack, onOpenChat }: { complaintId?: string | null; onBack?: () => void; onOpenChat?: (orderId?: string | null) => void }) {
   const [c, setC] = useState<any | null>(null);
@@ -30,8 +33,8 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
           setC(payload);
           // initialize action states from persisted complaint status so irreversible
           // actions remain locked when revisiting the detail screen
-          const isEscalated = String(payload.status) === 'In Progress';
-          const isResolved = String(payload.status) === 'Resolved';
+          const isEscalated = String(payload.status) === COMPLAINT_STATUS.IN_PROGRESS;
+          const isResolved = String(payload.status) === COMPLAINT_STATUS.RESOLVED;
           setEscalated(isEscalated);
           setResolved(isResolved);
           setActionLocked(isEscalated || isResolved);
@@ -54,8 +57,8 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
         const payload = { ...found, _order: orderData };
         setC(payload);
         // update action states according to current status
-        const isEscalated = String(found.status) === 'In Progress';
-        const isResolved = String(found.status) === 'Resolved';
+        const isEscalated = String(found.status) === COMPLAINT_STATUS.IN_PROGRESS;
+        const isResolved = String(found.status) === COMPLAINT_STATUS.RESOLVED;
         setEscalated(isEscalated);
         setResolved(isResolved);
         // if complaint is now open again, allow actions
@@ -94,7 +97,7 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ fontWeight: '700' }}>{c._order?.orderNumber || c.orderId}</Text>
-              <Text style={{ color: '#6b7280', marginTop: 4 }}>{new Date(c.createdAt).toLocaleDateString()}</Text>
+              <Text style={{ color: '#6b7280', marginTop: 4 }}>{formatDateOnly(c.createdAt)}</Text>
             </View>
           </View>
           <View style={{ marginTop: 12 }}>
@@ -117,10 +120,10 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
                 // immediately lock other actions to prevent concurrent irreversible updates
                 setActionLocked(true);
                 setResolving(true);
-                await (complaints as any).updateComplaintStatus(c.id, 'Resolved');
+                await (complaints as any).updateComplaintStatus(c.id, COMPLAINT_STATUS.RESOLVED);
                 setResolved(true);
                 // update local view
-                setC((prev: any) => prev ? { ...prev, status: 'Resolved' } : prev);
+                setC((prev: any) => prev ? { ...prev, status: COMPLAINT_STATUS.RESOLVED } : prev);
                 toastShow('Resolved', 'Complaint marked as resolved');
                 // keep actionLocked true because this is an irreversible action
               } catch (e) {
@@ -166,6 +169,3 @@ export default function SupplierComplaintDetailScreen({ complaintId, onBack, onO
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
-});

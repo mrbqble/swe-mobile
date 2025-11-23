@@ -1,35 +1,35 @@
-import { useEffect, useState } from 'react';
-import { linkedSuppliers } from '../api';
-import { LinkedSupplier } from '../api/linkedSuppliers.http';
-import { emitter } from '../helpers/events';
+import { useEffect } from 'react'
+import { linkedSuppliers } from '../api'
+import { emitter } from '../helpers/events'
+import { useAsync } from './useAsync'
 
 export function useLinkedSuppliers(consumerId?: string | number) {
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+	const { data, loading, error, execute } = useAsync<any[]>({
+		fn: () => linkedSuppliers.fetchLinkedSuppliers(consumerId),
+		dependencies: [consumerId],
+		transform: (res) => res || []
+	})
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await linkedSuppliers.fetchLinkedSuppliers(consumerId);
-        if (mounted) setSuppliers(res || []);
-      } catch (err) {
-        if (mounted) setError(err);
-      } finally { if (mounted) setLoading(false); }
-    })();
-    let unsub = () => {};
-    if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
-      unsub = emitter.on('linkedSuppliersChanged', async () => {
-        try {
-          const res = await linkedSuppliers.fetchLinkedSuppliers(consumerId);
-          if (mounted) setSuppliers(res || []);
-        } catch (e) { /* ignore */ }
-      });
-    }
-    return () => { try { unsub(); } catch (e) {} mounted = false; };
-  }, [consumerId]);
+	// Subscribe to event emitter for real-time updates
+	useEffect(() => {
+		if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
+			const unsub = emitter.on('linkedSuppliersChanged', () => {
+				execute()
+			})
+			return () => {
+				try {
+					unsub()
+				} catch (e) {
+					/* ignore */
+				}
+			}
+		}
+	}, [execute])
 
-  return { suppliers, loading, error, refresh: async () => { setLoading(true); try { const res = await linkedSuppliers.fetchLinkedSuppliers(consumerId); setSuppliers(res || []); } finally { setLoading(false); } } };
+	return {
+		suppliers: data || [],
+		loading,
+		error,
+		refresh: execute
+	}
 }

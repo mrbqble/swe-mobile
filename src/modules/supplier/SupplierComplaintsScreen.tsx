@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { styles } from '../../styles/supplier/SupplierComplaintsScreen.styles';
 import { complaints } from '../../api';
 import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
+import { formatDateOnly } from '../../utils/formatters';
+import { COMPLAINT_STATUS, COLORS, getStatusColor } from '../../constants';
 
 export default function SupplierComplaintsScreen({ supplierName, onBack, onOpenComplaint }: { supplierName?: string; onBack?: () => void; onOpenComplaint?: (complaintId: string) => void }) {
   const [items, setItems] = useState<any[]>([]);
@@ -46,12 +49,12 @@ export default function SupplierComplaintsScreen({ supplierName, onBack, onOpenC
               <TouchableOpacity onPress={() => onOpenComplaint && onOpenComplaint(item.id)}>
                 <Text style={{ fontWeight: '700', fontSize: 15 }}>{item.reason || 'No description provided'}</Text>
                 <Text style={{ color: '#374151', marginTop: 4 }}>{item.consumerName || 'Unknown'}</Text>
-                <Text style={{ color: '#6b7280', marginTop: 6, fontSize: 12 }}>Order {item.orderId} • {new Date(item.createdAt).toLocaleDateString()}</Text>
+                <Text style={{ color: '#6b7280', marginTop: 6, fontSize: 12 }}>Order {item.orderId} • {formatDateOnly(item.createdAt)}</Text>
               </TouchableOpacity>
             </View>
             <View style={{ justifyContent: 'center', alignItems: 'flex-end' }}>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: item.status === 'Open' ? '#b91c1c' : item.status === 'In Progress' ? '#f59e0b' : '#059669', fontWeight: '700' }}>{item.status}</Text>
+                <Text style={{ color: getStatusColor(item.status), fontWeight: '700' }}>{item.status}</Text>
               </View>
             </View>
           </View>
@@ -62,7 +65,3 @@ export default function SupplierComplaintsScreen({ supplierName, onBack, onOpenC
   );
 }
 
-const styles = StyleSheet.create({
-  row: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', alignItems: 'center' },
-  action: { paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#f3f4f6', borderRadius: 8 }
-});

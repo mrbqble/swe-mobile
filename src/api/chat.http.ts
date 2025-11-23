@@ -13,7 +13,7 @@ export type ChatMessage = {
   severity?: 'info' | 'warning' | 'success' | 'error';
 };
 
-export async function fetchMessages(sessionId: string | number, page = 1, size = 50) {
+export async function fetchMessages(sessionId: string | number, page = 1, size = PAGINATION.CHAT_PAGE_SIZE) {
   const q = new URLSearchParams();
   q.set('page', String(page));
   q.set('size', String(size));

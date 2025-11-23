@@ -15,7 +15,7 @@ export async function listOrders(params: { page?: number; size?: number; status?
 export async function fetchOrdersForConsumer(consumerId?: string | number, supplier?: string) {
   // Backend exposes GET /orders which returns a paginated response for the authenticated user
   // We'll call that and extract items.
-  const res = await listOrders({ page: 1, size: 50 });
+  const res = await listOrders({ page: 1, size: PAGINATION.ORDERS_PAGE_SIZE });
   const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : res?.data || [];
   return items as Promise<any[]>;
 }

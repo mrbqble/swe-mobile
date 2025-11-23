@@ -1,7 +1,9 @@
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { FontAwesome5, MaterialIcons, Feather, Ionicons } from '@expo/vector-icons'
+import { styles } from '../../styles/consumer/ConsumerHomeScreen.styles'
+import { getTranslations, type Language } from '../../translations'
 
 interface ConsumerHomeScreenProps {
 	language?: 'en' | 'ru'
@@ -9,43 +11,8 @@ interface ConsumerHomeScreenProps {
 	userName?: string
 }
 
-const translations = {
-	en: {
-		welcome: 'Welcome back!',
-		quickActions: 'Quick Actions',
-		requestLink: 'Request Link',
-		viewCatalog: 'View Catalog',
-		myOrders: 'My Orders',
-		requestLinkDesc: 'Connect with new suppliers',
-		viewCatalogDesc: 'Browse products',
-		myOrdersDesc: 'Track your orders',
-		home: 'Home',
-		suppliers: 'Suppliers',
-		catalog: 'Catalog',
-		orders: 'Orders',
-		profile: 'Profile'
-	},
-	ru: {
-		welcome: 'Добро пожаловать!',
-		quickActions: 'Быстрые действия',
-		requestLink: 'Запросить связь',
-		viewCatalog: 'Просмотр каталога',
-		myOrders: 'Мои заказы',
-		requestLinkDesc: 'Подключиться к новым поставщикам',
-		viewCatalogDesc: 'Просмотр товаров',
-		myOrdersDesc: 'Отследить заказы',
-		home: 'Главная',
-		suppliers: 'Поставщики',
-		catalog: 'Каталог',
-		orders: 'Заказы',
-		profile: 'Профиль'
-	}
-}
-
-// const userName = 'John Smith';
-
 export default function ConsumerHomeScreen({ language = 'en', navigateTo, userName }: ConsumerHomeScreenProps) {
-	const t = translations[language]
+	const t = getTranslations('consumer', 'home', language)
 
 	const quickActions = [
 		{
@@ -205,105 +172,3 @@ export default function ConsumerHomeScreen({ language = 'en', navigateTo, userNa
 	)
 }
 
-const styles = StyleSheet.create({
-	safeArea: {
-		flex: 1,
-		backgroundColor: '#fff'
-	},
-	container: {
-		flex: 1,
-		backgroundColor: '#fff'
-	},
-	header: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingHorizontal: 24,
-		paddingTop: 32,
-		paddingBottom: 20,
-		backgroundColor: '#2563eb'
-		// Remove border radius for edge-to-edge fit
-	},
-	headerTitle: {
-		color: '#fff',
-		fontSize: 20,
-		fontWeight: '700'
-	},
-	headerSubtitle: {
-		color: '#dbeafe',
-		fontSize: 14,
-		marginTop: 2
-	},
-	searchButton: {
-		backgroundColor: 'rgba(255,255,255,0.15)',
-		borderRadius: 20,
-		padding: 8
-	},
-	content: {
-		paddingHorizontal: 24,
-		paddingTop: 24,
-		paddingBottom: 16
-	},
-	quickActionsTitle: {
-		fontSize: 16,
-		color: '#111827',
-		fontWeight: '600',
-		marginBottom: 16
-	},
-	actionButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#fff',
-		borderRadius: 16,
-		borderWidth: 1,
-		borderColor: '#e5e7eb',
-		padding: 16,
-		marginBottom: 16,
-		shadowColor: '#000',
-		shadowOpacity: 0.03,
-		shadowRadius: 2,
-		elevation: 1
-	},
-	actionIconCircle: {
-		width: 48,
-		height: 48,
-		borderRadius: 24,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginRight: 16
-	},
-	actionTextBlock: {
-		flex: 1
-	},
-	actionTitle: {
-		fontSize: 16,
-		color: '#111827',
-		fontWeight: '600'
-	},
-	actionDesc: {
-		fontSize: 13,
-		color: '#6b7280',
-		marginTop: 2
-	},
-	bottomNav: {
-		flexDirection: 'row',
-		borderTopWidth: 1,
-		borderTopColor: '#e5e7eb',
-		backgroundColor: '#fff',
-		paddingVertical: 8,
-		paddingBottom: 12,
-		borderBottomLeftRadius: 20,
-		borderBottomRightRadius: 20
-	},
-	bottomNavItem: {
-		flex: 1,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	bottomNavLabel: {
-		fontSize: 12,
-		color: '#a1a1aa',
-		marginTop: 2,
-		fontWeight: '500'
-	}
-})

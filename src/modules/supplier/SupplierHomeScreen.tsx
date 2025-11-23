@@ -1,43 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { styles } from '../../styles/supplier/SupplierHomeScreen.styles';
 import { linkedSuppliers, orders, complaints } from '../../api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { emitter } from '../../helpers/events';
-
-type Language = 'en' | 'ru';
-
-const translations: Record<Language, any> = {
-  en: {
-    welcome: 'Welcome back!',
-    supplierName: 'TechPro Supply',
-    revenue: 'Monthly Revenue',
-    currency: '₸',
-    pendingRequests: 'Pending Link Requests',
-    openOrders: 'Open Orders',
-    complaints: 'Active Complaints',
-    viewAll: 'View All',
-    requests: 'requests',
-    orders: 'orders',
-    issues: 'issues',
-  },
-  ru: {
-    welcome: 'Добро пожаловать!',
-    supplierName: 'TechPro Supply',
-    revenue: 'Месячная выручка',
-    currency: '₸',
-    pendingRequests: 'Ожидающие запросы',
-    openOrders: 'Открытые заказы',
-    complaints: 'Активные жалобы',
-    viewAll: 'Показать все',
-    requests: 'запросов',
-    orders: 'заказов',
-    issues: 'проблем',
-  },
-};
+import { getTranslations, type Language } from '../../translations';
+import { LINK_STATUS, ORDER_STATUS, COMPLAINT_STATUS } from '../../constants';
 
 export default function SupplierHomeScreen({ language = 'en', userName = 'TechPro Supply', navigateTo }: { language?: Language; userName?: string; navigateTo?: (screen: string) => void }) {
-  const t = translations[language];
+  const t = getTranslations('supplier', 'home', language);
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number | null>(null);
   const [openOrdersCount, setOpenOrdersCount] = useState<number | null>(null);
   const [activeComplaintsCount, setActiveComplaintsCount] = useState<number | null>(null);
@@ -49,14 +21,14 @@ export default function SupplierHomeScreen({ language = 'en', userName = 'TechPr
         let pending = 0;
         if (typeof (linkedSuppliers as any).fetchLinkRequests === 'function') {
           const reqs = await (linkedSuppliers as any).fetchLinkRequests(userName);
-          pending = Array.isArray(reqs) ? reqs.filter((r: any) => r.status === 'pending').length : 0;
+          pending = Array.isArray(reqs) ? reqs.filter((r: any) => r.status === LINK_STATUS.PENDING).length : 0;
         } else if (typeof (linkedSuppliers as any).fetchLinkedSuppliers === 'function') {
           // fallback: count linked suppliers entries that look like pending/in-progress
           const linked = await (linkedSuppliers as any).fetchLinkedSuppliers(userName);
-          pending = Array.isArray(linked) ? linked.filter((l: any) => String((l.status || '')).toLowerCase() === 'in progress' || String((l.status || '')).toLowerCase() === 'pending').length : 0;
+          pending = Array.isArray(linked) ? linked.filter((l: any) => String((l.status || '')).toLowerCase() === ORDER_STATUS.IN_PROGRESS_LOWER || String((l.status || '')).toLowerCase() === LINK_STATUS.PENDING).length : 0;
         }
         const ords = await orders.fetchOrdersForConsumer(undefined, userName as any);
-        const open = Array.isArray(ords) ? ords.filter((o: any) => o.status !== 'Resolved' && o.status !== 'Completed').length : 0;
+        const open = Array.isArray(ords) ? ords.filter((o: any) => o.status !== ORDER_STATUS.COMPLETED && o.status !== ORDER_STATUS.COMPLETED).length : 0;
         const comps = await complaints.fetchComplaintsForSupplier(userName as any);
         const active = Array.isArray(comps) ? comps.length : 0;
         if (mounted) {
@@ -148,8 +120,8 @@ export default function SupplierHomeScreen({ language = 'en', userName = 'TechPr
             onPress={() => navigateTo && navigateTo(kpi.screen)}
             activeOpacity={0.8}
           >
-            <View style={[styles.kpiIconCircle, { backgroundColor: kpi.iconBg }]}> 
-              {kpi.icon()} 
+            <View style={[styles.kpiIconCircle, { backgroundColor: kpi.iconBg }]}>
+              {kpi.icon()}
             </View>
             <View style={styles.kpiTextBlock}>
               <Text style={styles.kpiTitle}>{kpi.title}</Text>
@@ -175,120 +147,3 @@ export default function SupplierHomeScreen({ language = 'en', userName = 'TechPr
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 20,
-    backgroundColor: '#2563eb',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    color: '#dbeafe',
-    fontSize: 14,
-    marginTop: 2,
-  },
-  searchButton: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    padding: 8,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  revenueCard: {
-    backgroundColor: '#22c55e',
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  revenueLabel: {
-    color: '#bbf7d0',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  revenueValue: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  kpiCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  kpiIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  kpiTextBlock: {
-    flex: 1,
-  },
-  kpiTitle: {
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '600',
-  },
-  kpiDesc: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  kpiViewAll: {
-    fontSize: 13,
-    color: '#2563eb',
-    fontWeight: '500',
-    marginLeft: 12,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-    paddingBottom: 12,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  bottomNavItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bottomNavLabel: {
-    fontSize: 12,
-    color: '#a1a1aa',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-});

@@ -57,5 +57,5 @@ export async function escalateToManager(complaintId: string) {
 	})
 	return getJson(res)
 }
-
 export default { createComplaint, fetchComplaintsForSupplier, fetchComplaintsForConsumer, updateComplaintStatus }
+
