@@ -54,7 +54,7 @@ export default function SupplierAddItemScreen({ language = 'en', navigateTo, sup
                 const uri = (res as any)?.assets?.[0]?.uri || (res as any)?.uri;
                 if (!uri) return;
                 setImageUri(uri);
-                // upload to mock storage
+                // upload to storage
                 setUploading(true);
                 try {
                   const uploaded = await chat.uploadAttachment(uri as string);
@@ -143,4 +143,3 @@ const styles = StyleSheet.create({
   cancelBtn: { padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 12, borderWidth: 1, borderColor: '#e5e7eb' }
 });
 
- 

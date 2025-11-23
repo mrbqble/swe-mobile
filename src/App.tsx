@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View } from 'react-native'
 import SignInScreen from './auth/SignInScreen'
@@ -25,6 +25,7 @@ import ConsumerRequestLinkScreen from './modules/consumer/ConsumerRequestLinkScr
 import ConsumerProfileScreen from './modules/consumer/ConsumerProfileScreen'
 import { linkedSuppliers } from './api'
 import ToastHost from './modules/shared/ToastHost'
+import { getMe, User } from './api/user.http'
 
 type Language = 'en' | 'ru'
 type UserRole = 'consumer' | 'supplier' | null
@@ -34,7 +35,14 @@ export default function App() {
 	const [signedIn, setSignedIn] = useState(false)
 	const [role, setRole] = useState<UserRole>(null)
 	const [showRegister, setShowRegister] = useState(false)
-	const user = { name: 'John Smith', org: 'Smith Trading LLC', email: 'john.smith@example.com' }
+	const [user, setUser] = useState<User>()
+
+	useEffect(() => {
+		if (signedIn) {
+			getMe().then(setUser).catch(console.error)
+		}
+	}, [signedIn])
+
 	// Simple screen navigation for the consumer UI
 	const [consumerScreen, setConsumerScreen] = useState<string>('consumer-home')
 	const [selectedProductId, setSelectedProductId] = useState<number | string | null>(null)
@@ -226,6 +234,7 @@ export default function App() {
 					<ConsumerHomeScreen
 						language={language}
 						navigateTo={navigateTo}
+						userName={user?.first_name + ' ' + user?.last_name}
 					/>
 				)}
 				{consumerScreen === 'catalog' && (
@@ -264,10 +273,10 @@ export default function App() {
 						onBack={() => setConsumerScreen('linked-suppliers')}
 						onSubmit={async (supplierId) => {
 							try {
-								// call API adapter to create a link request; mock adapter will update in-memory list
-								await (linkedSuppliers as any).addLinkRequest(supplierId)
-							} catch (err) {
-								// ignore for mock; in real adapter you'd handle errors
+							// call API adapter to create a link request
+							await (linkedSuppliers as any).addLinkRequest(supplierId)
+						} catch (err) {
+							// handle errors appropriately
 							}
 							// after submit, navigate back to linked suppliers which will re-fetch the list
 							setConsumerScreen('linked-suppliers')
@@ -281,7 +290,7 @@ export default function App() {
 						onBack={() => setConsumerScreen('consumer-orders')}
 						onOpenChat={() => setConsumerScreen('chat')}
 						language={language as 'en' | 'ru'}
-						userName={user.name}
+						userName={user?.first_name + ' ' + user?.last_name}
 					/>
 				)}
 				{consumerScreen === 'cart' && (

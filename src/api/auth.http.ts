@@ -5,8 +5,12 @@ export type SignupPayload = { firstName?: string; lastName?: string; email: stri
 
 export async function registerConsumer(payload: SignupPayload) {
 	// Backend expects POST /auth/signup under /api/v1
-  const sendPayload = { ...payload, role: payload.role ?? 'consumer' };
-	const body = await httpClient.fetchJson('/auth/signup', { method: 'POST', body: JSON.stringify(sendPayload), headers: { 'Content-Type': 'application/json' } })
+	const sendPayload = { ...payload, role: payload.role ?? 'consumer', first_name: payload.firstName, last_name: payload.lastName }
+	const body = await httpClient.fetchJson('/auth/signup', {
+		method: 'POST',
+		body: JSON.stringify(sendPayload),
+		headers: { 'Content-Type': 'application/json' }
+	})
 	// backend returns access_token and refresh_token in response model; persist them for later use
 	if (body?.access_token) {
 		await setTokens(body.access_token, body.refresh_token ?? null)

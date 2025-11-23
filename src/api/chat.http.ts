@@ -40,14 +40,14 @@ export async function uploadAttachment(uri: string) {
   // As a lightweight fallback for local/dev, return the original URI.
   return { url: uri };
 }
-// Compatibility wrapper: mock `sendMessage(threadId, from, text?, attachments?)`
+// Compatibility wrapper for different call signatures
 export async function sendMessageCompat(threadId: string | number, fromOrText?: string, textOrAttachments?: any, attachmentsMaybe?: any) {
   // If called in HTTP-style: (sessionId, text?, file_url?) then forward directly
   if (typeof textOrAttachments === 'undefined' || typeof textOrAttachments === 'string') {
     // signature: (sessionId, text?, file_url?)
     return sendMessage(threadId, fromOrText as string, textOrAttachments as string | undefined);
   }
-  // Otherwise assume mock-style: (threadId, from, text?, attachments?)
+  // Otherwise assume alternative signature: (threadId, from, text?, attachments?)
   const from = fromOrText as string;
   const text = typeof textOrAttachments === 'string' ? textOrAttachments as string : undefined;
   const attachments = Array.isArray(attachmentsMaybe) ? attachmentsMaybe : Array.isArray(textOrAttachments) ? textOrAttachments : [];

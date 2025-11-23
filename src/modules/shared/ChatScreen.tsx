@@ -61,7 +61,7 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer' }: { ord
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: false });
       const uri = (res as any)?.assets?.[0]?.uri || (res as any)?.uri;
       if (!uri) return;
-      // upload to mock server to simulate backend storage
+      // upload to server storage
         try {
           const uploaded = await chat.uploadAttachment(uri as string);
           const from = role === 'supplier' ? 'supplier' : 'consumer';

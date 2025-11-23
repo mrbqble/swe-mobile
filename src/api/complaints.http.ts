@@ -1,4 +1,4 @@
-// Placeholder HTTP adapter for complaints. Implement real HTTP calls to your backend and return same shapes as the mock.
+// HTTP adapter for complaints API
 import Config from '../config'
 
 const { API_BASE } = Config

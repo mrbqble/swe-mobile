@@ -12,13 +12,6 @@ const translations = {
   ru: { catalog: 'Каталог', search: 'Поиск товаров...', addItem: 'Добавить товар', noProducts: 'Товаров пока нет', noProductsDesc: 'Начните создание каталога, добавив первый товар', inStock: 'В наличии', outOfStock: 'Нет в наличии', currency: '₸', edit: 'Редактировать', delete: 'Удалить' }
 } as const;
 
-const mockProducts = [
-  { id: 'p1', name: 'Industrial Motor XL-2000', sku: 'PRD-0001', price: 125500, stock: 15, image: 'https://images.unsplash.com/photo-1535662755496-7a1b41997db2?auto=format&fit=crop&w=400&q=60' },
-  { id: 'p2', name: 'Office Paper A4 Premium', sku: 'PRD-0002', price: 3500, stock: 50, image: 'https://images.unsplash.com/photo-1612599316791-451087c7fe15?auto=format&fit=crop&w=400&q=60' },
-  { id: 'p3', name: 'Laptop Dell Precision 7000', sku: 'PRD-0003', price: 450000, stock: 8, image: 'https://images.unsplash.com/photo-1737868131532-0efce8062b43?auto=format&fit=crop&w=400&q=60' },
-  { id: 'p4', name: 'Safety Helmet Professional', sku: 'PRD-0004', price: 12500, stock: 0, image: 'https://images.unsplash.com/photo-1535662755496-7a1b41997db2?auto=format&fit=crop&w=400&q=60' }
-];
-
 export default function SupplierCatalogScreen({ language = 'en', navigateTo, supplierName }: { language?: 'en' | 'ru'; navigateTo?: (s: string) => void; supplierName?: string }) {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);

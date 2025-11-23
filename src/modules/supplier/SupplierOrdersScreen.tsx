@@ -10,13 +10,6 @@ const translations = {
   ru: { orders: 'Заказы', noOrders: 'Заказов пока нет', noOrdersDesc: 'Заказы клиентов будут отображаться здесь', order: 'Заказ', customer: 'Клиент', currency: '₸', items: 'товаров' }
 } as const;
 
-const mockOrders = [
-  { id: 'o1', number: 'ORD-001', date: '2024-01-15', total: 129000, itemCount: 2, status: 'created', customer: 'John Smith', organization: 'Smith Trading LLC' },
-  { id: 'o2', number: 'ORD-002', date: '2024-01-14', total: 450000, itemCount: 1, status: 'accepted', customer: 'Elena Nazarbayeva', organization: 'Astana Construction' },
-  { id: 'o3', number: 'ORD-003', date: '2024-01-13', total: 3500, itemCount: 1, status: 'in_progress', customer: 'Dmitry Petrov', organization: 'Almaty Tech Solutions' },
-  { id: 'o4', number: 'ORD-004', date: '2024-01-12', total: 12500, itemCount: 1, status: 'resolved', customer: 'Aigerim Suleimenova', organization: 'Shymkent Industries' }
-];
-
 export default function SupplierOrdersScreen({ language = 'en', navigateTo, onOrderSelect, supplierName }: { language?: 'en' | 'ru'; navigateTo?: (s: string) => void; onOrderSelect?: (o: any) => void; supplierName?: string }) {
   const t = translations[language];
   const [ordersList, setOrders] = useState<any[]>([]);

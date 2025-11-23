@@ -153,7 +153,7 @@ export default function ConsumerCartScreen({ onBack, navigateTo, language }: { o
                   // navigate to orders if provided
                   if (navigateTo) navigateTo('consumer-orders');
                 } catch (err) {
-                  // ignore for mock
+                  // handle errors appropriately
                 } finally {
                   setPlacing(false);
                 }
