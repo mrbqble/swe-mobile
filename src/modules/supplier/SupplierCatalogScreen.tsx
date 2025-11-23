@@ -2,11 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TextInput, FlatList, TouchableOpacity, Image } from 'react-native';
 import { styles } from '../../styles/supplier/SupplierCatalogScreen.styles';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { catalog } from '../../api';
 import { emitter } from '../../helpers/events';
-import { toastShow } from '../../helpers/toast';
-import StockEditModal from './StockEditModal';
 import { getTranslations, type Language } from '../../translations';
 import { formatPrice } from '../../utils/formatters';
 
@@ -19,13 +17,23 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
-      if (mounted) setProducts(res.data || []);
+      try {
+        const res = await catalog.fetchMyProducts({ search: query });
+        if (mounted) setProducts(res.data || []);
+      } catch (e) {
+        console.error('Failed to fetch products:', e);
+        if (mounted) setProducts([]);
+      }
     })();
     let unsub = () => {};
     if (typeof emitter !== 'undefined' && typeof emitter.on === 'function') {
       unsub = emitter.on('catalogChanged', async () => {
-        try { const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any); if (mounted) setProducts(res.data || []); } catch (e) {}
+        try {
+          const res = await catalog.fetchMyProducts({ search: query });
+          if (mounted) setProducts(res.data || []);
+        } catch (e) {
+          console.error('Failed to refresh products:', e);
+        }
       });
     }
     return () => { try { unsub(); } catch (e) {} mounted = false; };
@@ -36,13 +44,13 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
+      const res = await catalog.fetchMyProducts({ search: query });
       setProducts(res.data || []);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to refresh products:', e);
+    }
     setRefreshing(false);
   };
-
-  const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   const renderItem = ({ item }: any) => (
     <View style={styles.card}>
@@ -53,44 +61,6 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '700' }}>{item.name}</Text>
               <Text style={{ color: '#6b7280', marginTop: 4, fontSize: 12 }}>{t.sku || 'SKU:'} {item.sku}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', marginLeft: 8 }}>
-              <TouchableOpacity onPress={() => setEditingProduct(item)} style={{ padding: 8 }}>
-                <Feather name="edit" size={18} color="#2563eb" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => {
-                // confirm then delete
-                const doDelete = async () => {
-                  try {
-                    const ok = await (catalog as any).deleteProduct(item.id);
-                    if (ok) {
-                      const commonT = getTranslations('shared', 'common', language);
-                      toastShow(commonT.delete || 'Deleted', t.productDeleted || 'Product removed from catalog');
-                      // local refresh
-                      const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
-                      setProducts(res.data || []);
-                    } else {
-                      const commonT = getTranslations('shared', 'common', language);
-                      toastShow(commonT.error || 'Error', t.couldNotDelete || 'Could not delete product');
-                    }
-                  } catch (e) {
-                    const commonT = getTranslations('shared', 'common', language);
-                    toastShow(commonT.error || 'Error', t.couldNotDelete || 'Could not delete product');
-                  }
-                };
-                // small confirm using window.confirm-like UI - use JS confirm if available, else just call
-                try {
-                  const ok = (require('react-native').Alert).alert;
-                  // show native confirm
-                  const commonT = getTranslations('shared', 'common', language);
-                  (require('react-native').Alert).alert(t.deleteProduct || 'Delete product', t.deleteProductConfirm || 'Are you sure you want to delete this product?', [
-                    { text: commonT.cancel, style: 'cancel' },
-                    { text: commonT.delete, style: 'destructive', onPress: doDelete }
-                  ]);
-                } catch (e) { doDelete(); }
-              }} style={{ padding: 8 }}>
-                <Feather name="trash-2" size={18} color="#ef4444" />
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -114,7 +84,7 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
           <Feather name="arrow-left" size={20} color="#111827" />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: '700' }}>{t.catalog}</Text>
-        <TouchableOpacity onPress={() => navigateTo && navigateTo('item-edit')} style={styles.addBtn}><Feather name="plus" size={18} color="#fff" /></TouchableOpacity>
+        <View style={{ width: 36 }} />
       </View>
 
       <View style={{ padding: 16 }}>
@@ -138,19 +108,6 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
           </View>
         )}
       />
-      <StockEditModal visible={!!editingProduct} current={editingProduct?.stock || 0} language={language} onClose={() => setEditingProduct(null)} onSubmit={async (newStock) => {
-        if (!editingProduct) return;
-        try {
-          await (catalog as any).updateStock(editingProduct.id, newStock);
-          const commonT = getTranslations('shared', 'common', language);
-          toastShow(commonT.save || 'Saved', t.stockUpdated || 'Stock updated');
-          const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
-          setProducts(res.data || []);
-        } catch (e) {
-          const commonT = getTranslations('shared', 'common', language);
-          toastShow(commonT.error || 'Error', t.couldNotUpdateStock || 'Could not update stock');
-        }
-      }} />
     </SafeAreaView>
   );
 }

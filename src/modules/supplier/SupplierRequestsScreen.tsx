@@ -33,9 +33,21 @@ export default function SupplierRequestsScreen({
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      const res = await linkedSuppliers.fetchLinkRequests()
-      if (mounted) {
-        setRequests(res || [])
+      try {
+        const res = await linkedSuppliers.fetchLinkRequests()
+        if (mounted) {
+          // Filter to only show pending requests
+          const pending = (res || []).filter((r: any) => {
+            const status = (r.statusOriginal || String(r.status || '').toLowerCase())
+            return status === LINK_STATUS.PENDING.toLowerCase()
+          })
+          setRequests(pending)
+        }
+      } catch (e) {
+        console.error('Failed to fetch link requests:', e)
+        if (mounted) {
+          setRequests([])
+        }
       }
     })()
     let unsub = () => {}
@@ -44,10 +56,15 @@ export default function SupplierRequestsScreen({
         try {
           const res = await linkedSuppliers.fetchLinkRequests()
           if (mounted) {
-            setRequests(res || [])
+            // Filter to only show pending requests
+            const pending = (res || []).filter((r: any) => {
+              const status = (r.statusOriginal || String(r.status || '').toLowerCase())
+              return status === LINK_STATUS.PENDING.toLowerCase()
+            })
+            setRequests(pending)
           }
         } catch (e) {
-          console.log(e)
+          console.error('Failed to refresh link requests:', e)
         }
       })
     }
@@ -65,9 +82,14 @@ export default function SupplierRequestsScreen({
     setRefreshing(true)
     try {
       const res = await linkedSuppliers.fetchLinkRequests()
-      setRequests(res || [])
+      // Filter to only show pending requests
+      const pending = (res || []).filter((r: any) => {
+        const status = (r.statusOriginal || String(r.status || '').toLowerCase())
+        return status === LINK_STATUS.PENDING.toLowerCase()
+      })
+      setRequests(pending)
     } catch (e) {
-      console.log(e)
+      console.error('Failed to refresh link requests:', e)
       // ignore
     }
     setRefreshing(false)
@@ -76,16 +98,22 @@ export default function SupplierRequestsScreen({
   const handleApprove = async (item: any) => {
     const commonT = getTranslations('shared', 'common', language)
     try {
-      await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.ACCEPTED)
-    // remove processed request from the list
-    setRequests((r) => r.filter((x) => x.id !== item.id))
+      console.log('Approving link request:', item.id, 'with status:', LINK_STATUS.ACCEPTED)
+      // Update status on backend
+      const result = await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.ACCEPTED)
+      console.log('Link request update result:', result)
+      // Refresh the list from server to get updated data
+      const res = await linkedSuppliers.fetchLinkRequests()
+      console.log('Refreshed link requests:', res?.length)
+      setRequests(res || [])
       // trigger refresh event
       emitter.emit('linkRequestsChanged')
       emitter.emit('linkedSuppliersChanged')
-    // show toast instead of Alert
+      // show toast instead of Alert
       toastShow(t.approvedTitle || 'Approved', t.statusUpdatedMessage || 'The consumer will see the updated status.')
     } catch (err: any) {
       console.error('Failed to approve link request:', err)
+      console.error('Error details:', JSON.stringify(err, null, 2))
       toastShow(commonT.error || 'Error', err?.message || t.approveFailed || 'Failed to approve link request')
     }
   }
@@ -93,8 +121,11 @@ export default function SupplierRequestsScreen({
   const handleReject = async (item: any) => {
     const commonT = getTranslations('shared', 'common', language)
     try {
+      // Update status on backend
       await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.DENIED)
-    setRequests((r) => r.filter((x) => x.id !== item.id))
+      // Refresh the list from server to get updated data
+      const res = await linkedSuppliers.fetchLinkRequests()
+      setRequests(res || [])
       // trigger refresh event
       emitter.emit('linkRequestsChanged')
       emitter.emit('linkedSuppliersChanged')

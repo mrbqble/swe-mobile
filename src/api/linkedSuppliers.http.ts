@@ -52,7 +52,8 @@ export async function addLinkRequest(supplierId: string, consumerId?: string | n
 // Supplier-side: fetch incoming link requests
 export async function fetchLinkRequests(supplierId?: string | number) {
 	// Backend endpoint doesn't need supplier_id param - it uses authenticated user's supplier
-	const res = await httpClient.fetchJson(`/links/incoming`)
+	// Filter to only get pending requests
+	const res = await httpClient.fetchJson(`/links/incoming?status=pending`)
 	const raw = Array.isArray(res) ? res : res && Array.isArray(res.items) ? res.items : []
 	// Normalize consumer and supplier sub-objects and status for UI
 	const normalized = (raw || []).map((it: any) => {
@@ -69,13 +70,16 @@ export async function fetchLinkRequests(supplierId?: string | number) {
 		const consumerName = formatFullName(consumer) || consumer?.organization_name || consumer?.name || ''
 		const supplierName = formatFullName(supplier) || (supplier?.company_name ?? supplier?.name ?? '')
 		const statusRaw = (it.status || '').toString()
+		// Keep original status for filtering, but also provide display version
+		const statusOriginal = statusRaw.toLowerCase()
 		// Capitalize first letter for display
 		const status = statusRaw ? statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1).toLowerCase() : ''
 		return {
 			...it,
 			consumer: consumer ? { ...consumer, organization_name: consumerName } : null,
 			supplier: supplier ? { ...supplier, company_name: supplierName } : null,
-			status,
+			status, // Display version (capitalized)
+			statusOriginal, // Original lowercase for filtering
 			name: consumerName // For backward compatibility
 		} as any
 	})

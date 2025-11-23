@@ -1,6 +1,7 @@
 export interface Product {
   id: number | string;
   name: string;
+  sku?: string;
   description?: string;
   price: number; // integer in local currency units
   currency?: string;

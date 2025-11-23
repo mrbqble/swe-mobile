@@ -435,7 +435,6 @@ export const translations = {
 			en: {
 				welcome: 'Welcome back!',
 				supplierName: 'TechPro Supply',
-				revenue: 'Monthly Revenue',
 				currency: '₸',
 				pendingRequests: 'Pending Link Requests',
 				openOrders: 'Open Orders',
@@ -452,7 +451,6 @@ export const translations = {
 			ru: {
 				welcome: 'Добро пожаловать!',
 				supplierName: 'TechPro Supply',
-				revenue: 'Месячная выручка',
 				currency: '₸',
 				pendingRequests: 'Ожидающие запросы',
 				openOrders: 'Открытые заказы',

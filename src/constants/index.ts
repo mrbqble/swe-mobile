@@ -61,7 +61,7 @@ export const DELIVERY_METHOD = {
 	DELIVERY: 'Delivery'
 } as const
 
-export type DeliveryMethod = typeof DELIVERY_METHOD[keyof typeof DELIVERY_METHOD]
+export type DeliveryMethod = (typeof DELIVERY_METHOD)[keyof typeof DELIVERY_METHOD]
 
 // ============================================================================
 // Colors
@@ -180,7 +180,7 @@ export const CURRENCY = {
  * Check if an order status is considered "open" (not completed/resolved)
  */
 export function isOrderOpen(status: string): boolean {
-	const closedStatuses = [ORDER_STATUS.COMPLETED, ORDER_STATUS.RESOLVED, ORDER_STATUS.REJECTED]
+	const closedStatuses: string[] = [ORDER_STATUS.COMPLETED, ORDER_STATUS.COMPLETED_LOWER, ORDER_STATUS.REJECTED, ORDER_STATUS.REJECTED_LOWER]
 	return !closedStatuses.includes(status)
 }
 
@@ -203,7 +203,12 @@ export function getStatusColor(status: string): string {
 	if (statusLower.includes('progress') || statusLower === LINK_STATUS.PENDING) {
 		return COLORS.WARNING
 	}
-	if (statusLower.includes('rejected') || statusLower.includes('denied') || statusLower.includes('blocked') || statusLower === COMPLAINT_STATUS.OPEN.toLowerCase()) {
+	if (
+		statusLower.includes('rejected') ||
+		statusLower.includes('denied') ||
+		statusLower.includes('blocked') ||
+		statusLower === COMPLAINT_STATUS.OPEN.toLowerCase()
+	) {
 		return COLORS.ERROR
 	}
 
@@ -222,10 +227,14 @@ export function getStatusBgColor(status: string): string {
 	if (statusLower.includes('progress') || statusLower === LINK_STATUS.PENDING) {
 		return COLORS.WARNING_LIGHT
 	}
-	if (statusLower.includes('rejected') || statusLower.includes('denied') || statusLower.includes('blocked') || statusLower === COMPLAINT_STATUS.OPEN.toLowerCase()) {
+	if (
+		statusLower.includes('rejected') ||
+		statusLower.includes('denied') ||
+		statusLower.includes('blocked') ||
+		statusLower === COMPLAINT_STATUS.OPEN.toLowerCase()
+	) {
 		return COLORS.ERROR_LIGHT
 	}
 
 	return COLORS.BG_GRAY
 }
-
