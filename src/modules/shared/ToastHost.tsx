@@ -3,20 +3,29 @@ import { View, Text, Animated } from 'react-native';
 import { styles } from '../../styles/shared/ToastHost.styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toastBus } from '../../helpers/toast';
+import { TIMING } from '../../constants';
 
 export default function ToastHost() {
   const insets = useSafeAreaInsets();
   const [toasts, setToasts] = useState<Array<{ id: string; title?: string; message?: string }>>([]);
+  const timeoutRefs = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   useEffect(() => {
     const unsub = toastBus.subscribe((t) => {
       setToasts((s) => [...s, t]);
       // auto remove after configured duration
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setToasts((s) => s.filter(x => x.id !== t.id));
+        timeoutRefs.current.delete(t.id);
       }, TIMING.TOAST_DURATION);
+      timeoutRefs.current.set(t.id, timeoutId);
     });
-    return unsub;
+    return () => {
+      unsub();
+      // Clear all pending timeouts on unmount
+      timeoutRefs.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutRefs.current.clear();
+    };
   }, []);
 
   if (toasts.length === 0) return null;

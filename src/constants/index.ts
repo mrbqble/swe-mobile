@@ -36,10 +36,12 @@ export const ORDER_STATUS = {
 } as const
 
 export const COMPLAINT_STATUS = {
-	OPEN: 'Open',
-	IN_PROGRESS: 'In Progress',
-	RESOLVED: 'Resolved',
-	REJECTED: 'Rejected'
+	OPEN: 'open',
+	ESCALATED: 'escalated',
+	RESOLVED: 'resolved',
+	// Legacy aliases for backward compatibility
+	IN_PROGRESS: 'escalated', // 'In Progress' maps to 'escalated'
+	REJECTED: 'rejected' // Not used in backend but kept for compatibility
 } as const
 
 export const LINK_STATUS = {

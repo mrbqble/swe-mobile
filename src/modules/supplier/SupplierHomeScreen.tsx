@@ -81,11 +81,11 @@ export default function SupplierHomeScreen({ language = 'en', userName = 'TechPr
   ];
 
   const bottomTabs = [
-    { id: 'supplier-home', label: 'Home', icon: () => <Feather name="home" size={22} /> },
+    { id: 'supplier-home', label: t.home, icon: () => <Feather name="home" size={22} /> },
     { id: 'link-requests', label: t.pendingRequests, icon: () => <Feather name="link" size={22} /> },
-    { id: 'supplier-catalog', label: 'Catalog', icon: () => <MaterialIcons name="inventory" size={22} /> },
+    { id: 'supplier-catalog', label: t.catalog, icon: () => <MaterialIcons name="inventory" size={22} /> },
     { id: 'supplier-orders', label: t.openOrders, icon: () => <Feather name="package" size={22} /> },
-    { id: 'supplier-profile', label: 'Profile', icon: () => <Feather name="user" size={22} /> },
+    { id: 'supplier-profile', label: t.profile, icon: () => <Feather name="user" size={22} /> },
   ];
 
   const activeTab = 'supplier-home';
@@ -108,7 +108,7 @@ export default function SupplierHomeScreen({ language = 'en', userName = 'TechPr
         <View style={styles.revenueCard}>
           <View>
             <Text style={styles.revenueLabel}>{t.revenue}</Text>
-            <Text style={[styles.revenueValue, { fontSize: 14 }]}>{'Under the development (not available)'}</Text>
+            <Text style={[styles.revenueValue, { fontSize: 14 }]}>{t.underDevelopment}</Text>
           </View>
           <Feather name="trending-up" size={32} color="#bbf7d0" />
         </View>

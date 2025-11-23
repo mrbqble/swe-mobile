@@ -1,39 +1,63 @@
-const BASE = 'http://YOUR_API_BASE_HERE';
+import * as cartStorage from './cartStorage';
 
+/**
+ * Get cart from local storage
+ * Returns cart data with items array and totalQty
+ */
 export async function getCart() {
-  const res = await fetch(`${BASE}/api/cart`);
-  if (!res.ok) throw new Error('Network error');
-  return res.json();
+  const cart = await cartStorage.getCart();
+  const totalQty = cartStorage.calculateTotalQty(cart.items);
+  return {
+    items: cart.items,
+    totalQty
+  };
 }
 
-export async function addToCart(productId: number | string, qty = 1) {
-  const res = await fetch(`${BASE}/api/cart`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ productId, qty })
-  });
-  if (!res.ok) throw new Error('Network error');
-  return res.json();
+/**
+ * Add item to cart or update quantity if exists
+ */
+export async function addToCart(productId: number | string, qty: number = 1) {
+  const cart = await cartStorage.addToCart(productId, qty);
+  const totalQty = cartStorage.calculateTotalQty(cart.items);
+  return {
+    items: cart.items,
+    totalQty
+  };
 }
 
+/**
+ * Remove item from cart
+ */
 export async function removeFromCart(productId: number | string) {
-  const res = await fetch(`${BASE}/api/cart/${productId}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Network error');
-  return res.json();
+  const cart = await cartStorage.removeFromCart(productId);
+  const totalQty = cartStorage.calculateTotalQty(cart.items);
+  return {
+    items: cart.items,
+    totalQty
+  };
 }
 
+/**
+ * Clear all items from cart
+ */
 export async function clearCart() {
-  const res = await fetch(`${BASE}/api/cart`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Network error');
-  return res.json();
+  await cartStorage.clearCart();
+  return {
+    items: [],
+    totalQty: 0
+  };
 }
 
+/**
+ * Update item quantity in cart
+ */
 export async function updateCartItem(productId: number | string, qty: number) {
-  const res = await fetch(`${BASE}/api/cart/${productId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ qty })
-  });
-  if (!res.ok) throw new Error('Network error');
-  return res.json();
+  const cart = await cartStorage.updateCartItem(productId, qty);
+  const totalQty = cartStorage.calculateTotalQty(cart.items);
+  return {
+    items: cart.items,
+    totalQty
+  };
 }
+
+export default { getCart, addToCart, removeFromCart, clearCart, updateCartItem };

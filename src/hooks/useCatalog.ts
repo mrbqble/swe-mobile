@@ -17,11 +17,16 @@ export function useCatalog(initialQuery = '', pageSize = PAGINATION.CATALOG_PAGE
 	// Fetch function for useAsync
 	const fetchCatalogPage = useCallback(
 		async (nextPage: number, searchQuery: string): Promise<PaginatedResponse<Product>> => {
+			if (!supplierId) {
+				// Return empty result if no supplier selected
+				return { data: [], meta: { page: nextPage, limit: pageSize, total: 0, pages: 0 } }
+			}
 			return (catalog as any).fetchCatalog({
 				supplier_id: supplierId,
 				page: nextPage,
-				size: pageSize,
-				search: searchQuery
+				size: pageSize
+				// Note: Backend catalog endpoint doesn't support search parameter
+				// Search would need to be implemented client-side or via a different endpoint
 			})
 		},
 		[supplierId, pageSize]

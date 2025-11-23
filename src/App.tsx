@@ -103,7 +103,10 @@ export default function App() {
 		return (
 			<SafeAreaProvider>
 				<View style={{ flex: 1 }}>
-					<LanguagePickerScreen onLanguageSelect={setLanguage} />
+					<LanguagePickerScreen
+						onLanguageSelect={setLanguage}
+						language={(language || 'en') as 'en' | 'ru'}
+					/>
 					<ToastHost />
 				</View>
 			</SafeAreaProvider>
@@ -199,6 +202,7 @@ export default function App() {
 						<SupplierComplaintsScreen
 							supplierName={supplierName}
 							onBack={() => setSupplierScreen('supplier-home')}
+							language={language as 'en' | 'ru'}
 							onOpenComplaint={(id: string) => {
 								setSupplierSelectedComplaintId(id)
 								setSupplierScreen('complaint-detail')
@@ -209,6 +213,7 @@ export default function App() {
 						<SupplierComplaintDetailScreen
 							complaintId={supplierSelectedComplaintId}
 							onBack={() => setSupplierScreen('complaints')}
+							language={language as 'en' | 'ru'}
 							onOpenChat={(orderId) => {
 								setSupplierSelectedOrderId(orderId || null)
 								setSupplierChatReturnTo('complaint-detail')
@@ -232,6 +237,7 @@ export default function App() {
 							orderId={supplierSelectedOrderId}
 							onBack={() => setSupplierScreen(supplierChatReturnTo)}
 							role="supplier"
+							language={language as 'en' | 'ru'}
 						/>
 					)}
 					{supplierScreen === 'supplier-profile' && (
@@ -354,6 +360,7 @@ export default function App() {
 						orderId={selectedOrderId}
 						onBack={() => setConsumerScreen('order-detail')}
 						role="consumer"
+						language={language as 'en' | 'ru'}
 					/>
 				)}
 				{consumerScreen === 'consumer-profile' && (

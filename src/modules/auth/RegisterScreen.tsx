@@ -44,12 +44,13 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 	}, [password])
 
 	const handleRegister = async () => {
+		const commonT = getTranslations('shared', 'common', language)
 		if (!firstName || !lastName || !email || !password) {
-			toastShow('Validation', 'All fields are required')
+			toastShow(commonT.validation || 'Validation', t.allFieldsRequired || 'All fields are required')
 			return
 		}
 		if (!emailRegex.test(email)) {
-			toastShow('Validation', 'Please enter a valid email address')
+			toastShow(commonT.validation || 'Validation', t.invalidEmail || 'Please enter a valid email address')
 			return
 		}
 		if (
@@ -58,17 +59,17 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 			!passwordChecks.lower(password) ||
 			!passwordChecks.digitOrSymbol(password)
 		) {
-			toastShow('Validation', 'Password must be 8+ chars with upper, lower and a number or symbol')
+			toastShow(commonT.validation || 'Validation', t.passwordRequirements || 'Password must be 8+ chars with upper, lower and a number or symbol')
 			return
 		}
 		setLoading(true)
 		try {
 			const res: any = await (auth as any).registerConsumer({ firstName, lastName, email, password })
-			toastShow('Welcome', 'Account created')
+			toastShow(commonT.welcome || 'Welcome', t.accountCreated || 'Account created')
 			if (onRegistered) onRegistered(res.user || res)
 		} catch (e: any) {
-			const msg = e?.message || 'Registration failed'
-			toastShow('Error', msg)
+			const msg = e?.message || t.registrationFailed || 'Registration failed'
+			toastShow(commonT.error || 'Error', msg)
 		} finally {
 			setLoading(false)
 		}
@@ -80,19 +81,19 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 				<Text style={styles.title}>{t.title}</Text>
 			</View>
 			<View style={styles.body}>
-				<Text style={styles.label}>First name</Text>
+				<Text style={styles.label}>{t.firstName}</Text>
 				<TextInput
 					value={firstName}
 					onChangeText={setFirstName}
 					style={styles.input}
-					placeholder="First name"
+					placeholder={t.firstNamePlaceholder}
 				/>
-				<Text style={styles.label}>Last name</Text>
+				<Text style={styles.label}>{t.lastName}</Text>
 				<TextInput
 					value={lastName}
 					onChangeText={setLastName}
 					style={styles.input}
-					placeholder="Last name"
+					placeholder={t.lastNamePlaceholder}
 				/>
 				<Text style={styles.label}>{t.email}</Text>
 				<View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -116,17 +117,17 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 					secureTextEntry
 				/>
 				<View style={{ marginTop: 6 }}>
-					<Text style={{ fontSize: 12, color: passwordValid ? 'green' : '#6b7280' }}>
-						{passwordChecks.minLength(password) ? '✓' : '✕'} At least 8 characters
+					<Text style={{ fontSize: 12, color: passwordChecks.minLength(password) ? 'green' : '#6b7280' }}>
+						{passwordChecks.minLength(password) ? '✓' : '✕'} {t.passwordMinLength}
 					</Text>
 					<Text style={{ fontSize: 12, color: passwordChecks.upper(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.upper(password) ? '✓' : '✕'} One uppercase letter
+						{passwordChecks.upper(password) ? '✓' : '✕'} {t.passwordUpper}
 					</Text>
 					<Text style={{ fontSize: 12, color: passwordChecks.lower(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.lower(password) ? '✓' : '✕'} One lowercase letter
+						{passwordChecks.lower(password) ? '✓' : '✕'} {t.passwordLower}
 					</Text>
 					<Text style={{ fontSize: 12, color: passwordChecks.digitOrSymbol(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.digitOrSymbol(password) ? '✓' : '✕'} One number or symbol
+						{passwordChecks.digitOrSymbol(password) ? '✓' : '✕'} {t.passwordDigitOrSymbol}
 					</Text>
 				</View>
 			</View>

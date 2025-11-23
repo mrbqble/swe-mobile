@@ -4,10 +4,14 @@ import { PAGINATION } from '../constants';
 
 // Normalize backend pagination/field names to the mobile app's expected shape
 export async function fetchCatalog({ supplier_id, page = 1, size = PAGINATION.CATALOG_PAGE_SIZE }:
-  { supplier_id?: number | string; page?: number; size?: number }
+  { supplier_id: number | string; page?: number; size?: number }
 ): Promise<PaginatedResponse<Product>> {
+  // Backend requires supplier_id as a mandatory query parameter
+  if (!supplier_id) {
+    throw new Error('supplier_id is required to fetch catalog');
+  }
   const q = new URLSearchParams();
-  if (supplier_id) q.set('supplier_id', String(supplier_id));
+  q.set('supplier_id', String(supplier_id));
   q.set('page', String(page));
   q.set('size', String(size));
   const res = await httpClient.fetchJson(`/catalog?${q.toString()}`);
@@ -65,3 +69,28 @@ export async function deleteProduct(productId: number | string) {
   await httpClient.fetchJson(`/products/${encodeURIComponent(String(productId))}`, { method: 'DELETE' });
   return true;
 }
+
+// List suppliers from catalog endpoint (public, no auth required for search)
+export async function listSuppliers({ q, page = 1, size = 20 }: { q?: string; page?: number; size?: number } = {}) {
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  params.set('page', String(page));
+  params.set('size', String(size));
+  const res = await httpClient.fetchJson(`/catalog/suppliers?${params.toString()}`);
+  const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+  return {
+    items,
+    page: res?.page ?? page,
+    size: res?.size ?? size,
+    total: res?.total ?? items.length,
+    pages: res?.pages ?? 1
+  };
+}
+
+export default {
+  fetchCatalog,
+  fetchProduct,
+  updateStock,
+  deleteProduct,
+  listSuppliers
+};

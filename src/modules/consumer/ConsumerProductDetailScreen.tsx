@@ -36,9 +36,9 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
 
   if (!productId) return (
     <SafeAreaView style={styles.center}>
-      <Text>No product selected</Text>
+      <Text>{t.noProductSelected || 'No product selected'}</Text>
       <TouchableOpacity onPress={onBack} style={{ marginTop: 12 }}>
-        <Text style={{ color: '#2563eb' }}>Back</Text>
+        <Text style={{ color: '#2563eb' }}>{getTranslations('shared', 'common', language || 'en').back || 'Back'}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -51,9 +51,9 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
 
   if (error) return (
     <SafeAreaView style={{ padding: 16 }}>
-      <Text style={{ color: '#ef4444' }}>Error loading product</Text>
+      <Text style={{ color: '#ef4444' }}>{t.errorLoadingProduct || 'Error loading product:'} {error instanceof Error ? error.message : String(error)}</Text>
       <TouchableOpacity onPress={onBack} style={{ marginTop: 12 }}>
-        <Text style={{ color: '#2563eb' }}>Back</Text>
+        <Text style={{ color: '#2563eb' }}>{getTranslations('shared', 'common', language || 'en').back}</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -66,25 +66,25 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
             <Image source={{ uri: (item?.imageUrl ?? (item as any)?.image) as string }} style={styles.image} />
           </TouchableOpacity>
         )}
-        <Text style={styles.title}>{item?.name}</Text>
-        <Text style={styles.supplier}>{item?.supplier}</Text>
+        <Text style={styles.title}>{item?.name || t.product || 'Product'}</Text>
+        <Text style={styles.supplier}>{item?.supplier || t.supplier || 'Supplier'}</Text>
         <View style={styles.rowBetweenLarge}>
-          <Text style={styles.price}>{formatPrice(item?.price, item?.currency ?? '₸')}</Text>
+          <Text style={styles.price}>{formatPrice(item?.price || 0, item?.currency ?? '₸')}</Text>
           <View style={styles.stockBadge}>
-            <Text style={styles.stockBadgeText}>{item?.stock && item.stock > 0 ? `In Stock (${item.stock})` : 'Out of stock'}</Text>
+            <Text style={styles.stockBadgeText}>{item?.stock && item.stock > 0 ? `${t.inStock} (${item.stock})` : t.outOfStock}</Text>
           </View>
         </View>
 
-        <Text style={{ marginTop: 12 }}>{item?.description}</Text>
+        {item?.description && <Text style={{ marginTop: 12 }}>{item.description}</Text>}
 
         <View style={{ marginTop: 18 }}>
-          <Text style={{ fontWeight: '700', marginBottom: 8 }}>Specifications</Text>
-          <View style={styles.specRow}><Text style={styles.specKey}>SKU</Text><Text style={styles.specVal}>{(item as any)?.sku ?? '—'}</Text></View>
-          <View style={styles.specRow}><Text style={styles.specKey}>Supplier</Text><Text style={styles.specVal}>{item?.supplier ?? '—'}</Text></View>
+          <Text style={{ fontWeight: '700', marginBottom: 8 }}>{t.specs}</Text>
+          <View style={styles.specRow}><Text style={styles.specKey}>{t.sku || 'SKU'}</Text><Text style={styles.specVal}>{(item as any)?.sku ?? '—'}</Text></View>
+          <View style={styles.specRow}><Text style={styles.specKey}>{t.supplier || 'Supplier'}</Text><Text style={styles.specVal}>{item?.supplier || '—'}</Text></View>
         </View>
 
         <View style={{ marginTop: 18 }}>
-          <Text style={{ fontWeight: '700', marginBottom: 8 }}>Quantity</Text>
+          <Text style={{ fontWeight: '700', marginBottom: 8 }}>{t.quantity}</Text>
           <View style={styles.qtyRow}>
             <TouchableOpacity onPress={decrement} style={styles.qtyBtn} disabled={qty <= 1}>
               <Feather name="minus" size={20} color={qty <= 1 ? '#cbd5e1' : '#111827'} />
@@ -101,23 +101,24 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
             if (!item) return;
             // prevent adding more than stock
             if (typeof item.stock === 'number' && qty > item.stock) {
-              setToastMessage(`Cannot add more than ${item.stock} items`);
+              const message = (t.cannotAddMore || 'Cannot add more than {count} items').replace('{count}', String(item.stock));
+              setToastMessage(message);
               setShowToast(true);
               setTimeout(() => setShowToast(false), TIMING.TOAST_DURATION);
               return;
             }
             await add(item.id, qty);
-            setToastMessage('Added to cart');
+            setToastMessage(t.addedToCart || 'Added to cart');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 2000);
           }}
           style={styles.addBtn}
         >
-          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '700' }}>Add to Order</Text>
+          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '700' }}>{t.add}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onBack} style={{ marginTop: 12 }}>
-          <Text style={{ color: '#2563eb', textAlign: 'center' }}>Back to catalog</Text>
+          <Text style={{ color: '#2563eb', textAlign: 'center' }}>{t.back}</Text>
         </TouchableOpacity>
       </ScrollView>
       {showToast && (

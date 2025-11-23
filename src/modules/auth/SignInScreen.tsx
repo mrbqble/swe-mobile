@@ -23,7 +23,8 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
 	const handleContinue = () => {
 		// Basic client-side validation: require role, email and password.
 		if (!selectedRole || !email || !password) {
-			toastShow('Validation', 'All fields are required')
+			const commonT = getTranslations('shared', 'common', language)
+			toastShow(commonT.validation || 'Validation', t.allFieldsRequired || 'All fields are required')
 			return
 		}
 		// Call backend login and persist tokens via auth adapter
@@ -34,8 +35,8 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
 				await (auth as any).login(email, password)
 				if (onSignIn) onSignIn(selectedRole)
 			} catch (err: any) {
-				const msg = err?.message || 'Sign in failed'
-				toastShow('Error', msg)
+				const msg = err?.message || t.signInFailed || 'Sign in failed'
+				toastShow(getTranslations('shared', 'common', language).error || 'Error', msg)
 			} finally {
 				setLoading(false)
 			}
@@ -107,13 +108,13 @@ export default function SignInScreen({ language = 'en', onSignIn, onRegister }: 
 					onPress={handleContinue}
 					disabled={loading}
 				>
-					<Text style={styles.continueButtonText}>{loading ? 'Please wait...' : t.continue}</Text>
+					<Text style={styles.continueButtonText}>{loading ? t.pleaseWait : t.continue}</Text>
 				</TouchableOpacity>
 				{/* Register link (consumers only) */}
 				{typeof onRegister === 'function' && (
 					<View style={{ marginTop: 12, alignItems: 'center' }}>
 						<TouchableOpacity onPress={() => onRegister && onRegister()}>
-							<Text style={{ color: '#2563eb' }}>Don't have an account? Register</Text>
+							<Text style={{ color: '#2563eb' }}>{t.noAccount}</Text>
 						</TouchableOpacity>
 					</View>
 				)}

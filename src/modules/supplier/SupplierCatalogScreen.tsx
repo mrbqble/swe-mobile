@@ -52,7 +52,7 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '700' }}>{item.name}</Text>
-              <Text style={{ color: '#6b7280', marginTop: 4, fontSize: 12 }}>SKU: {item.sku}</Text>
+              <Text style={{ color: '#6b7280', marginTop: 4, fontSize: 12 }}>{t.sku || 'SKU:'} {item.sku}</Text>
             </View>
             <View style={{ flexDirection: 'row', marginLeft: 8 }}>
               <TouchableOpacity onPress={() => setEditingProduct(item)} style={{ padding: 8 }}>
@@ -64,22 +64,28 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
                   try {
                     const ok = await (catalog as any).deleteProduct(item.id);
                     if (ok) {
-                      toastShow('Deleted', 'Product removed from catalog');
+                      const commonT = getTranslations('shared', 'common', language);
+                      toastShow(commonT.delete || 'Deleted', t.productDeleted || 'Product removed from catalog');
                       // local refresh
                       const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
                       setProducts(res.data || []);
                     } else {
-                      toastShow('Error', 'Could not delete product');
+                      const commonT = getTranslations('shared', 'common', language);
+                      toastShow(commonT.error || 'Error', t.couldNotDelete || 'Could not delete product');
                     }
-                  } catch (e) { toastShow('Error', 'Could not delete product'); }
+                  } catch (e) {
+                    const commonT = getTranslations('shared', 'common', language);
+                    toastShow(commonT.error || 'Error', t.couldNotDelete || 'Could not delete product');
+                  }
                 };
                 // small confirm using window.confirm-like UI - use JS confirm if available, else just call
                 try {
                   const ok = (require('react-native').Alert).alert;
                   // show native confirm
-                  (require('react-native').Alert).alert('Delete product', 'Are you sure you want to delete this product?', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: doDelete }
+                  const commonT = getTranslations('shared', 'common', language);
+                  (require('react-native').Alert).alert(t.deleteProduct || 'Delete product', t.deleteProductConfirm || 'Are you sure you want to delete this product?', [
+                    { text: commonT.cancel, style: 'cancel' },
+                    { text: commonT.delete, style: 'destructive', onPress: doDelete }
                   ]);
                 } catch (e) { doDelete(); }
               }} style={{ padding: 8 }}>
@@ -132,14 +138,18 @@ export default function SupplierCatalogScreen({ language = 'en', navigateTo, sup
           </View>
         )}
       />
-      <StockEditModal visible={!!editingProduct} current={editingProduct?.stock || 0} onClose={() => setEditingProduct(null)} onSubmit={async (newStock) => {
+      <StockEditModal visible={!!editingProduct} current={editingProduct?.stock || 0} language={language} onClose={() => setEditingProduct(null)} onSubmit={async (newStock) => {
         if (!editingProduct) return;
         try {
           await (catalog as any).updateStock(editingProduct.id, newStock);
-          toastShow('Saved', 'Stock updated');
+          const commonT = getTranslations('shared', 'common', language);
+          toastShow(commonT.save || 'Saved', t.stockUpdated || 'Stock updated');
           const res = await catalog.fetchCatalog({ search: query, supplier: supplierName } as any);
           setProducts(res.data || []);
-        } catch (e) { toastShow('Error', 'Could not update stock'); }
+        } catch (e) {
+          const commonT = getTranslations('shared', 'common', language);
+          toastShow(commonT.error || 'Error', t.couldNotUpdateStock || 'Could not update stock');
+        }
       }} />
     </SafeAreaView>
   );

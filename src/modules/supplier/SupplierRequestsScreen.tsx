@@ -13,6 +13,8 @@ import { emitter } from '../../helpers/events'
 import { toastShow } from '../../helpers/toast'
 import { styles } from '../../styles/supplier/SupplierRequestsScreen.styles'
 import { formatDate } from '../../utils/formatters'
+import { getTranslations } from '../../translations'
+import { LINK_STATUS } from '../../constants'
 
 
 export default function SupplierRequestsScreen({
@@ -72,26 +74,34 @@ export default function SupplierRequestsScreen({
   }
 
   const handleApprove = async (item: any) => {
-    await linkedSuppliers.updateLinkRequestStatus(item.id, 'approved')
+    const commonT = getTranslations('shared', 'common', language)
+    try {
+      await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.ACCEPTED)
     // remove processed request from the list
     setRequests((r) => r.filter((x) => x.id !== item.id))
+      // trigger refresh event
+      emitter.emit('linkRequestsChanged')
+      emitter.emit('linkedSuppliersChanged')
     // show toast instead of Alert
-    try {
-      toastShow(t.approvedTitle, 'The consumer will see the updated status.')
-    } catch (e) {
-      console.log(e)
-      /* ignore */
+      toastShow(t.approvedTitle || 'Approved', t.statusUpdatedMessage || 'The consumer will see the updated status.')
+    } catch (err: any) {
+      console.error('Failed to approve link request:', err)
+      toastShow(commonT.error || 'Error', err?.message || t.approveFailed || 'Failed to approve link request')
     }
   }
 
   const handleReject = async (item: any) => {
-    await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.REJECTED)
-    setRequests((r) => r.filter((x) => x.id !== item.id))
+    const commonT = getTranslations('shared', 'common', language)
     try {
-      toastShow(t.rejectedTitle, 'The consumer will see the updated status.')
-    } catch (e) {
-      console.log(e)
-      /* ignore */
+      await linkedSuppliers.updateLinkRequestStatus(item.id, LINK_STATUS.DENIED)
+    setRequests((r) => r.filter((x) => x.id !== item.id))
+      // trigger refresh event
+      emitter.emit('linkRequestsChanged')
+      emitter.emit('linkedSuppliersChanged')
+      toastShow(t.rejectedTitle || 'Rejected', t.statusUpdatedMessage || 'The consumer will see the updated status.')
+    } catch (err: any) {
+      console.error('Failed to reject link request:', err)
+      toastShow(commonT.error || 'Error', err?.message || t.rejectFailed || 'Failed to reject link request')
     }
   }
 
@@ -102,8 +112,25 @@ export default function SupplierRequestsScreen({
           <MaterialIcons name="apartment" size={18} color="#2563eb" />
         </View>
         <View style={{ marginLeft: 12, flex: 1 }}>
-          <Text style={{ fontWeight: '700' }}>{item.consumer?.organization_name || item.name || item.organization || 'Consumer'}</Text>
-          <Text style={{ color: '#6b7280', marginTop: 4 }}>{item.consumer?.organization_name || ''}</Text>
+          {(() => {
+            // Format full name from first_name and last_name
+            const formatFullName = (person: any) => {
+              if (!person) return '';
+              if (person.first_name && person.last_name) {
+                return `${person.first_name} ${person.last_name}`.trim();
+              }
+              return person.organization_name || person.company_name || person.name || '';
+            };
+            const consumerFullName = formatFullName(item.consumer) || item.consumer?.organization_name || item.name || item.organization || getTranslations('supplier', 'orders', language).consumer || 'Consumer';
+            return (
+              <>
+                <Text style={{ fontWeight: '700' }}>{consumerFullName}</Text>
+                {item.consumer?.organization_name && consumerFullName !== item.consumer.organization_name && (
+                  <Text style={{ color: '#6b7280', marginTop: 4 }}>{item.consumer.organization_name}</Text>
+                )}
+              </>
+            );
+          })()}
           <Text style={{ color: '#9ca3af', marginTop: 4, fontSize: 12 }}>{/* email not exposed by default */ ''}</Text>
           <Text style={{ color: '#9ca3af', marginTop: 6, fontSize: 12 }}>{formatDate(item.created_at)}</Text>
         </View>

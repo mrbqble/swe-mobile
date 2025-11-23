@@ -3,8 +3,6 @@ import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './token
 
 const { API_BASE, DEFAULT_HEADERS } = Config
 
-console.log(API_BASE)
-
 async function augmentHeaders(inputHeaders?: Record<string, string>) {
 	const headers: Record<string, string> = { ...(inputHeaders || {}), ...DEFAULT_HEADERS }
 	const token = await getAccessToken()
@@ -19,7 +17,16 @@ async function fetchJson(path: string, opts: RequestInit = {}) {
 	const headers = await augmentHeaders(opts.headers as Record<string, string> | undefined)
 	let res = await fetch(url, { ...opts, headers })
 	let text = await res.text()
-	let body = text ? JSON.parse(text) : null
+	let body = null
+	try {
+		body = text ? JSON.parse(text) : null
+	} catch (e) {
+		// If JSON parsing fails, create error with response text
+		const err: any = new Error(`Invalid JSON response: ${text?.substring(0, 100)}`)
+		err.status = res.status
+		err.body = { detail: text }
+		throw err
+	}
 
 	// If unauthorized, attempt refresh and retry once
 	if (res.status === 401) {

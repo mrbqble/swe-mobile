@@ -1,6 +1,6 @@
 import { cart } from '../api'
 import { useAsync } from './useAsync'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 type CartData = {
 	items: any[]
@@ -11,9 +11,9 @@ export function useCart() {
 	const [items, setItems] = useState<any[]>([])
 	const [totalQty, setTotalQty] = useState(0)
 
-	const { loading, execute: load } = useAsync<CartData>({
+	const { loading, execute: load, error } = useAsync<CartData>({
 		fn: async () => {
-			const res = await (cart as any).getCart()
+			const res = await cart.getCart()
 			return {
 				items: res.items || [],
 				totalQty: res.totalQty || 0
@@ -25,35 +25,50 @@ export function useCart() {
 		}
 	})
 
+	// Load cart on mount
+	useEffect(() => {
+		load()
+	}, [])
+
 	const add = async (productId: number | string, qty = 1) => {
-		await (cart as any).addToCart(productId, qty)
+		try {
+			await cart.addToCart(productId, qty)
 		await load()
+		} catch (err) {
+			console.error('Error adding to cart:', err)
+			throw err
+		}
 	}
 
 	const remove = async (productId: number | string) => {
-		await (cart as any).removeFromCart(productId)
+		try {
+			await cart.removeFromCart(productId)
 		await load()
+		} catch (err) {
+			console.error('Error removing from cart:', err)
+			throw err
+		}
 	}
 
 	const update = async (productId: number | string, qty: number) => {
-		if ((cart as any).updateCartItem) {
-			await (cart as any).updateCartItem(productId, qty)
-		} else {
-			// fallback: if qty <=0 remove, else set by removing and adding
-			if (qty <= 0) {
-				await (cart as any).removeFromCart(productId)
-			} else {
-				await (cart as any).removeFromCart(productId)
-				await (cart as any).addToCart(productId, qty)
-			}
+		try {
+			await cart.updateCartItem(productId, qty)
+			await load()
+		} catch (err) {
+			console.error('Error updating cart item:', err)
+			throw err
 		}
-		await load()
 	}
 
 	const clear = async () => {
-		await (cart as any).clearCart()
+		try {
+			await cart.clearCart()
 		await load()
+		} catch (err) {
+			console.error('Error clearing cart:', err)
+			throw err
+		}
 	}
 
-	return { items, totalQty, loading, load, add, remove, clear, update }
+	return { items, totalQty, loading, load, add, remove, clear, update, error }
 }

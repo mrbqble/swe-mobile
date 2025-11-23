@@ -32,20 +32,20 @@ export default function SupplierProfileScreen({ language = 'en', onLanguageChang
         {user && (
           <Text style={{ color: '#6b7280', marginTop: 4 }}>{user.first_name} {user.last_name}</Text>
         )}
-        <Text style={{ color: '#6b7280', marginTop: 4 }}>Supplier</Text>
+        <Text style={{ color: '#6b7280', marginTop: 4 }}>{t.supplier}</Text>
       </View>
 
       <View style={{ padding: 16 }}>
         <Text style={{ fontWeight: '700', marginBottom: 8 }}>{t.organizationInfo}</Text>
         {user && (
           <View style={styles.infoCard}>
-            <Text style={{ color: '#6b7280' }}>Name</Text>
+            <Text style={{ color: '#6b7280' }}>{t.name}</Text>
             <Text style={{ marginTop: 6, fontWeight: '600' }}>{user.first_name} {user.last_name}</Text>
           </View>
         )}
         {user && (
           <View style={styles.infoCard}>
-            <Text style={{ color: '#6b7280' }}>Email</Text>
+            <Text style={{ color: '#6b7280' }}>{t.email}</Text>
             <Text style={{ marginTop: 6, fontWeight: '600' }}>{user.email}</Text>
           </View>
         )}
