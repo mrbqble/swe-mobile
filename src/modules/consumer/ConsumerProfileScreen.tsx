@@ -46,7 +46,7 @@ export default function ConsumerProfileScreen({
 				<Text style={{ fontWeight: '700', marginBottom: 8 }}>{L.personalInformation}</Text>
 				<View style={styles.infoCard}>
 					<Text style={{ color: '#6b7280' }}>{L.name}</Text>
-					<Text style={{ marginTop: 6, fontWeight: '600' }}>{user?.first_name + ' ' + user?.last_name}</Text>
+					<Text style={{ marginTop: 6, fontWeight: '600' }}>{user ? `${user.first_name} ${user.last_name}` : ''}</Text>
 				</View>
 				{/* <View style={styles.infoCard}>
 					<Text style={{ color: '#6b7280' }}>{L.organization}</Text>

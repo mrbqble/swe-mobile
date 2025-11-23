@@ -23,9 +23,10 @@ import ConsumerSuppliersScreen from './modules/consumer/ConsumerSuppliersScreen'
 import ConsumerOrderDetailScreen from './modules/consumer/ConsumerOrderDetailScreen'
 import ConsumerRequestLinkScreen from './modules/consumer/ConsumerRequestLinkScreen'
 import ConsumerProfileScreen from './modules/consumer/ConsumerProfileScreen'
-import { linkedSuppliers } from './api'
+import { linkedSuppliers, auth } from './api'
 import ToastHost from './modules/shared/ToastHost'
 import { getMe, User } from './api/user.http'
+import { getAccessToken } from './api/token'
 
 type Language = 'en' | 'ru'
 type UserRole = 'consumer' | 'supplier' | null
@@ -36,10 +37,44 @@ export default function App() {
 	const [role, setRole] = useState<UserRole>(null)
 	const [showRegister, setShowRegister] = useState(false)
 	const [user, setUser] = useState<User>()
+	const [initializing, setInitializing] = useState(true)
 
+	// Check for existing token on app startup
+	useEffect(() => {
+		;(async () => {
+			try {
+				const token = await getAccessToken()
+				if (token) {
+					// Token exists, try to fetch user data
+					const userData = await getMe()
+					setUser(userData)
+					// Determine role from user data
+					const userRole = userData.role === 'consumer' ? 'consumer' : userData.role === 'supplier_owner' ? 'supplier' : null
+					if (userRole) {
+						setRole(userRole)
+						setSignedIn(true)
+					}
+				}
+			} catch (error) {
+				// Token invalid or expired, user needs to sign in
+				console.log('No valid session found')
+			} finally {
+				setInitializing(false)
+			}
+		})()
+	}, [])
+
+	// Fetch user data when signed in
 	useEffect(() => {
 		if (signedIn) {
-			getMe().then(setUser).catch(console.error)
+			getMe()
+				.then(setUser)
+				.catch((error) => {
+					console.error('Failed to fetch user data:', error)
+					// If getMe fails, user might need to sign in again
+					setSignedIn(false)
+					setRole(null)
+				})
 		}
 	}, [signedIn])
 
@@ -52,6 +87,17 @@ export default function App() {
 	const [supplierSelectedOrderId, setSupplierSelectedOrderId] = useState<string | null>(null)
 	const [supplierSelectedComplaintId, setSupplierSelectedComplaintId] = useState<string | null>(null)
 	const [supplierChatReturnTo, setSupplierChatReturnTo] = useState<string>('supplier-order-detail')
+
+	if (initializing) {
+		// Show loading state while checking for existing session
+		return (
+			<SafeAreaProvider>
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+					<ToastHost />
+				</View>
+			</SafeAreaProvider>
+		)
+	}
 
 	if (language === null) {
 		return (
@@ -192,13 +238,16 @@ export default function App() {
 						<SupplierProfileScreen
 							language={language as 'en' | 'ru'}
 							onLanguageChange={(l) => setLanguage(l)}
-							onLogout={() => {
+							onLogout={async () => {
+								await (auth as any).logout()
+								setUser(undefined)
 								setSignedIn(false)
 								setRole(null)
 								setConsumerScreen('consumer-home')
 							}}
 							navigateTo={navigateSupplierTo}
 							supplierName={supplierName}
+							user={user}
 						/>
 					)}
 					<ToastHost />
@@ -234,7 +283,7 @@ export default function App() {
 					<ConsumerHomeScreen
 						language={language}
 						navigateTo={navigateTo}
-						userName={user?.first_name + ' ' + user?.last_name}
+						userName={user ? `${user.first_name} ${user.last_name}` : undefined}
 					/>
 				)}
 				{consumerScreen === 'catalog' && (
@@ -290,7 +339,7 @@ export default function App() {
 						onBack={() => setConsumerScreen('consumer-orders')}
 						onOpenChat={() => setConsumerScreen('chat')}
 						language={language as 'en' | 'ru'}
-						userName={user?.first_name + ' ' + user?.last_name}
+						userName={user ? `${user.first_name} ${user.last_name}` : undefined}
 					/>
 				)}
 				{consumerScreen === 'cart' && (

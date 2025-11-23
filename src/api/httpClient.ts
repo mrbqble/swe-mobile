@@ -26,7 +26,9 @@ async function fetchJson(path: string, opts: RequestInit = {}) {
 		const refreshToken = await getRefreshToken()
 		if (refreshToken) {
 			try {
-				const refreshUrl = `${API_BASE}${'/auth/refresh'}`
+				// Use consistent URL construction pattern
+				const refreshPath = '/auth/refresh'
+				const refreshUrl = refreshPath.startsWith('http') ? refreshPath : `${API_BASE}${refreshPath.startsWith('/') ? '' : '/'}${refreshPath}`
 				const refreshRes = await fetch(refreshUrl, {
 					method: 'POST',
 					headers: { ...DEFAULT_HEADERS },

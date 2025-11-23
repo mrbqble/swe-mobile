@@ -4,8 +4,10 @@ export type User = {
   id: number;
   email: string;
   role: string;
-  first_name?: string | null;
-  last_name?: string | null;
+  first_name: string;
+  last_name: string;
+  is_active?: boolean;
+  created_at?: string;
 };
 
 export async function getMe(): Promise<User> {

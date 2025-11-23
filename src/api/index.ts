@@ -8,6 +8,7 @@ import * as OrdersHttp from './orders.http'
 import * as ComplaintsHttp from './complaints.http'
 import * as AuthHttp from './auth.http'
 import * as ChatHttp from './chat.http'
+import * as UserHttp from './user.http'
 
 export const catalog = CatalogHttp
 export const product = ProductHttp
@@ -18,3 +19,4 @@ export const orders = OrdersHttp
 export const complaints = ComplaintsHttp
 export const auth = AuthHttp
 export const chat = ChatHttp
+export const user = UserHttp

@@ -20,7 +20,11 @@ export async function registerConsumer(payload: SignupPayload) {
 
 export async function login(email: string, password: string) {
 	const payload = { email, password }
-	const body = await httpClient.fetchJson('/auth/login', { method: 'POST', body: JSON.stringify(payload) })
+	const body = await httpClient.fetchJson('/auth/login', {
+		method: 'POST',
+		body: JSON.stringify(payload),
+		headers: { 'Content-Type': 'application/json' }
+	})
 	if (body?.access_token) {
 		await setTokens(body.access_token, body.refresh_token ?? null)
 	}
