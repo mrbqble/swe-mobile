@@ -6,10 +6,16 @@ export async function searchSuppliers(query?: string) {
     const q = new URLSearchParams();
     if (query) q.set('q', String(query));
     const res = await httpClient.fetchJson(`/catalog/suppliers?${q.toString()}`);
-    // backend may return pagination: { items: [...] }
-    if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.items)) return res.items;
-    return [];
+    // backend returns pagination: { items: [...] }
+    const suppliersRaw = Array.isArray(res) ? res : res && Array.isArray(res.items) ? res.items : [];
+    // Map backend SupplierResponse to frontend Supplier shape
+    return (suppliersRaw || []).map((s: any) => ({
+      id: s.id,
+      name: s.company_name || s.name || String(s.id),
+      description: s.description || '',
+      city: s.city || undefined,
+      rating: s.rating || 0,
+    }));
   } catch (e) {
     // If backend doesn't expose suppliers listing, gracefully return empty list
     return [];

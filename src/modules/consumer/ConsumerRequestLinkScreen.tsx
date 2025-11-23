@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useSupplierSearch } from '../../hooks/useSupplierSearch';
+import { linkedSuppliers } from '../../api';
 import { emitter } from '../../helpers/events';
 import { toastShow } from '../../helpers/toast';
 
@@ -62,10 +63,17 @@ export default function ConsumerRequestLinkScreen({ onBack, onSubmit, language }
       <View style={styles.footer}>
         <TouchableOpacity disabled={!selected} onPress={async () => {
           if (!selected) return;
-          if (onSubmit) await onSubmit(selected);
-          // trigger refresh for supplier/consumer lists
-          try { emitter.emit('linkRequestsChanged'); emitter.emit('linkedSuppliersChanged'); } catch (e) {}
-          try { toastShow(L.submitRequest, 'The supplier will review your request.'); } catch (e) {}
+          try {
+            // Call backend to create link request
+            await linkedSuppliers.addLinkRequest(selected);
+            // optional callback
+            if (onSubmit) await onSubmit(selected);
+            // trigger refresh for supplier/consumer lists
+            try { emitter.emit('linkRequestsChanged'); emitter.emit('linkedSuppliersChanged'); } catch (e) {}
+            try { toastShow(L.submitRequest, 'The supplier will review your request.'); } catch (e) {}
+          } catch (err: any) {
+            try { toastShow('Error', err?.message || 'Could not submit link request'); } catch (e) {}
+          }
         }} style={[styles.submitBtn, !selected ? { backgroundColor: '#e5e7eb' } : {}]}> 
           <Text style={{ color: selected ? '#fff' : '#9ca3af', fontWeight: '700' }}>{L.submitRequest}</Text>
         </TouchableOpacity>

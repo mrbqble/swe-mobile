@@ -121,16 +121,10 @@ export default function SupplierRequestsScreen({
           <MaterialIcons name="apartment" size={18} color="#2563eb" />
         </View>
         <View style={{ marginLeft: 12, flex: 1 }}>
-          <Text style={{ fontWeight: '700' }}>{item.name}</Text>
-          <Text style={{ color: '#6b7280', marginTop: 4 }}>
-            {item.organization}
-          </Text>
-          <Text style={{ color: '#9ca3af', marginTop: 4, fontSize: 12 }}>
-            {item.email}
-          </Text>
-          <Text style={{ color: '#9ca3af', marginTop: 6, fontSize: 12 }}>
-            {item.date}
-          </Text>
+          <Text style={{ fontWeight: '700' }}>{item.consumer?.organization_name || item.name || item.organization || 'Consumer'}</Text>
+          <Text style={{ color: '#6b7280', marginTop: 4 }}>{item.consumer?.organization_name || ''}</Text>
+          <Text style={{ color: '#9ca3af', marginTop: 4, fontSize: 12 }}>{/* email not exposed by default */ ''}</Text>
+          <Text style={{ color: '#9ca3af', marginTop: 6, fontSize: 12 }}>{item.created_at ? new Date(item.created_at).toLocaleString() : ''}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row', marginTop: 12, gap: 12 }}>
