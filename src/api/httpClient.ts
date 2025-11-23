@@ -3,6 +3,8 @@ import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './token
 
 const { API_BASE, DEFAULT_HEADERS } = Config
 
+console.log(API_BASE)
+
 async function augmentHeaders(inputHeaders?: Record<string, string>) {
 	const headers: Record<string, string> = { ...(inputHeaders || {}), ...DEFAULT_HEADERS }
 	const token = await getAccessToken()

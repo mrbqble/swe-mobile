@@ -5,8 +5,8 @@ type ConfigParams = {
 }
 
 const Config: ConfigParams = {
-	API_BASE: process.env.API_BASE as string,
-	USE_MOCK: process.env.USE_MOCK === 'true',
+	API_BASE: process.env.EXPO_PUBLIC_API_BASE as string,
+	USE_MOCK: process.env.EXPO_PUBLIC_USE_MOCK === 'true',
 	DEFAULT_HEADERS: {
 		'Content-Type': 'application/json'
 	}
