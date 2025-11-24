@@ -35,15 +35,17 @@ export type ChatSession = {
 
 /**
  * Create a chat session (consumer only)
- * Backend expects: { sales_rep_id, order_id? }
+ * Backend expects: { sales_rep_id?, order_id? }
+ * If sales_rep_id is null/undefined, backend will auto-assign based on order's supplier
  */
 export async function createChatSession(
-	sales_rep_id: number | string,
+	sales_rep_id: number | string | null | undefined,
 	order_id?: number | string | null
 ): Promise<ChatSession> {
-	const body: any = {
-		sales_rep_id: Number(sales_rep_id)
-	};
+	const body: any = {};
+	if (sales_rep_id !== null && sales_rep_id !== undefined) {
+		body.sales_rep_id = Number(sales_rep_id);
+	}
 	if (order_id) {
 		body.order_id = Number(order_id);
 	}
@@ -116,10 +118,11 @@ export async function sendMessage(sessionId: string | number, text: string, file
 /**
  * Get or create a chat session for an order
  * Helper function to find existing session or create new one
+ * If sales_rep_id is null/undefined, backend will auto-assign based on order's supplier
  */
 export async function getOrCreateChatSessionForOrder(
 	orderId: string | number,
-	sales_rep_id: number | string
+	sales_rep_id: number | string | null | undefined
 ): Promise<ChatSession> {
 	try {
 		// Try to find existing session for this order
@@ -132,7 +135,7 @@ export async function getOrCreateChatSessionForOrder(
 		// If listing fails, just create new session
 	}
 
-	// Create new session
+	// Create new session (backend will auto-assign sales rep if sales_rep_id is null)
 	return createChatSession(sales_rep_id, orderId);
 }
 

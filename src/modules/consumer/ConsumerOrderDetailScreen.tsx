@@ -208,25 +208,25 @@ export default function ConsumerOrderDetailScreen({
 										}}
 									>
 										{(() => {
-										const status = (order?.status || 'pending').toLowerCase();
-										const getStatusTranslation = (statusValue: string): string => {
-											switch (statusValue) {
-												case 'pending':
-													return L.statusPending || 'Pending';
-												case 'accepted':
-													return L.statusAccepted || 'Accepted';
-												case 'in_progress':
-													return L.statusInProgress || 'In Progress';
-												case 'completed':
-													return L.statusCompleted || 'Completed';
-												case 'rejected':
-													return L.statusRejected || 'Rejected';
-												default:
-													return statusValue.charAt(0).toUpperCase() + statusValue.slice(1).replace('_', ' ');
+											const status = (order?.status || 'pending').toLowerCase()
+											const getStatusTranslation = (statusValue: string): string => {
+												switch (statusValue) {
+													case 'pending':
+														return L.statusPending || 'Pending'
+													case 'accepted':
+														return L.statusAccepted || 'Accepted'
+													case 'in_progress':
+														return L.statusInProgress || 'In Progress'
+													case 'completed':
+														return L.statusCompleted || 'Completed'
+													case 'rejected':
+														return L.statusRejected || 'Rejected'
+													default:
+														return statusValue.charAt(0).toUpperCase() + statusValue.slice(1).replace('_', ' ')
+												}
 											}
-										};
-										return getStatusTranslation(status);
-									})()}
+											return getStatusTranslation(status)
+										})()}
 									</Text>
 								</View>
 							</View>
@@ -241,18 +241,18 @@ export default function ConsumerOrderDetailScreen({
 						const itemName = item.name || item.product?.name || `Product ${item.product_id || item.productId}`
 
 						return (
-						<View style={styles.itemRow}>
+							<View style={styles.itemRow}>
 								<View style={{ flex: 1 }}>
 									<Text style={{ fontWeight: '600' }}>{itemName}</Text>
 									{item.description && <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>{item.description}</Text>}
 								</View>
-							<View style={{ alignItems: 'flex-end' }}>
-								<Text style={{ color: '#6b7280', fontSize: 12 }}>
+								<View style={{ alignItems: 'flex-end' }}>
+									<Text style={{ color: '#6b7280', fontSize: 12 }}>
 										{L.qty || 'Qty'}: {item.qty || item.quantity || 0}
 									</Text>
 									<Text style={{ color: '#2563eb', fontWeight: '700' }}>
 										{formatPrice(itemPrice)} × {item.qty || item.quantity || 0} = {formatPrice(itemTotal)}
-								</Text>
+									</Text>
 								</View>
 							</View>
 						)
@@ -304,7 +304,7 @@ export default function ConsumerOrderDetailScreen({
 									]}
 								>
 									<Text style={{ color: complaint ? '#6b7280' : '#b91c1c', fontWeight: '700' }}>
-										{complaint ? (L.complaintSubmitted || 'Complaint Submitted') : (L.reportIssue || 'Report an issue')}
+										{complaint ? L.complaintSubmitted || 'Complaint Submitted' : L.reportIssue || 'Report an issue'}
 									</Text>
 								</TouchableOpacity>
 
@@ -315,7 +315,9 @@ export default function ConsumerOrderDetailScreen({
 										{/* show reason first (full width) so long descriptions don't push status off-screen */}
 										<View>
 											<Text style={{ color: '#374151' }}>{complaint.description || complaint.reason || L.noDescription}</Text>
-											<Text style={{ color: '#6b7280', marginTop: 6, fontSize: 12 }}>{L.submitted || 'Submitted:'} {formatDate(complaint.createdAt)}</Text>
+											<Text style={{ color: '#6b7280', marginTop: 6, fontSize: 12 }}>
+												{L.submitted || 'Submitted:'} {formatDate(complaint.createdAt)}
+											</Text>
 										</View>
 										{/* status on its own row below the description */}
 										<View style={{ marginTop: 8, alignItems: 'flex-end' }}>
@@ -331,16 +333,16 @@ export default function ConsumerOrderDetailScreen({
 												}}
 											>
 												{(() => {
-													const statusLower = (complaint.status || '').toLowerCase();
+													const statusLower = (complaint.status || '').toLowerCase()
 													switch (statusLower) {
 														case 'open':
-															return L.statusOpen || 'Open';
+															return L.statusOpen || 'Open'
 														case 'escalated':
-															return L.statusEscalated || 'Escalated';
+															return L.statusEscalated || 'Escalated'
 														case 'resolved':
-															return L.statusResolved || 'Resolved';
+															return L.statusResolved || 'Resolved'
 														default:
-															return complaint.status?.charAt(0).toUpperCase() + complaint.status?.slice(1) || 'Open';
+															return complaint.status?.charAt(0).toUpperCase() + complaint.status?.slice(1) || 'Open'
 													}
 												})()}
 											</Text>
@@ -410,9 +412,7 @@ export default function ConsumerOrderDetailScreen({
 													</Text>
 												) : complaint.consumer_feedback === false && complaint.status?.toLowerCase() === COMPLAINT_STATUS.RESOLVED ? (
 													<View>
-														<Text style={{ color: '#6b7280', marginTop: 8 }}>
-															{L.thankYouForResponse || 'Thank you for your response.'}
-														</Text>
+														<Text style={{ color: '#6b7280', marginTop: 8 }}>{L.thankYouForResponse || 'Thank you for your response.'}</Text>
 														<TouchableOpacity
 															onPress={async () => {
 																if (!complaint) return
@@ -422,7 +422,10 @@ export default function ConsumerOrderDetailScreen({
 																	emitter.emit('complaintsChanged')
 																	try {
 																		const commonT = getTranslations('shared', 'common', language || 'en')
-																		toastShow(commonT.welcome || 'Thanks', L.notifiedSupplier || 'We notified the supplier and reopened the complaint')
+																		toastShow(
+																			commonT.welcome || 'Thanks',
+																			L.notifiedSupplier || 'We notified the supplier and reopened the complaint'
+																		)
 																	} catch (e) {}
 																} catch (e: any) {
 																	console.error('Failed to reopen complaint:', e)
@@ -453,31 +456,18 @@ export default function ConsumerOrderDetailScreen({
 								onSubmit={async (reason: string) => {
 									if (!orderId || !order) return
 									try {
-										// Backend requires sales_rep_id and manager_id
-										// For now, we'll need to get these from the supplier
-										// In a real app, the backend should auto-assign these based on the supplier
-										// For now, we'll use placeholder values - the backend should handle this better
-										// TODO: Get actual sales_rep_id and manager_id from supplier staff API
-										const supplierId = order.supplier_id || order.supplierId
-										if (!supplierId) {
-											const commonT = getTranslations('shared', 'common', language || 'en')
-											toastShow(commonT.error || 'Error', L.cannotCreateComplaint || 'Cannot create complaint: supplier information missing')
-											return
-										}
-
-										// For now, we'll try to create with default values
-										// The backend should ideally auto-assign sales rep and manager
-										// Using 1 as placeholder - backend should validate and assign proper staff
-										const salesRepId = 1 // TODO: Get from supplier staff
-										const managerId = 1 // TODO: Get from supplier staff
-
-										const created = await complaints.createComplaint(orderId, salesRepId, managerId, reason || 'No description provided')
+										// Backend now auto-assigns sales_rep_id and manager_id based on the order's supplier
+										// We can pass null/undefined and the backend will handle assignment
+										const created = await complaints.createComplaint(orderId, null, null, reason || 'No description provided')
 										// set local complaint state so the consumer sees the mini-grid and can't resubmit
 										setComplaint(created)
 										emitter.emit('complaintsChanged')
 										try {
 											const commonT = getTranslations('shared', 'common', language || 'en')
-											toastShow(L.complaintLogged || 'Complaint logged', L.complaintLoggedMessage || 'We have recorded your issue and supplier will be notified')
+											toastShow(
+												L.complaintLogged || 'Complaint logged',
+												L.complaintLoggedMessage || 'We have recorded your issue and supplier will be notified'
+											)
 										} catch (e) {}
 									} catch (e: any) {
 										console.error('Failed to create complaint:', e)

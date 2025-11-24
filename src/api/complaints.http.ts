@@ -25,20 +25,26 @@ export type Complaint = {
 
 /**
  * Create a complaint (consumer only)
- * Backend expects: { order_id, sales_rep_id, manager_id, description }
+ * Backend expects: { order_id, sales_rep_id?, manager_id?, description }
+ * sales_rep_id and manager_id are optional - backend will auto-assign if not provided
  */
 export async function createComplaint(
 	order_id: number | string,
-	sales_rep_id: number | string,
-	manager_id: number | string,
+	sales_rep_id: number | string | null | undefined,
+	manager_id: number | string | null | undefined,
 	description: string
 ): Promise<Complaint> {
-	const body = {
+	const body: any = {
 		order_id: Number(order_id),
-		sales_rep_id: Number(sales_rep_id),
-		manager_id: Number(manager_id),
 		description: description
 	};
+	// Only include sales_rep_id and manager_id if they are provided (not null/undefined)
+	if (sales_rep_id !== null && sales_rep_id !== undefined) {
+		body.sales_rep_id = Number(sales_rep_id);
+	}
+	if (manager_id !== null && manager_id !== undefined) {
+		body.manager_id = Number(manager_id);
+	}
 	const res = await httpClient.fetchJson('/complaints', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },

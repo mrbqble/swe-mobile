@@ -35,10 +35,8 @@ export default function ChatScreen({ orderId, onBack, role = 'consumer', languag
         // For consumer: create or get session with a sales rep
         // For supplier: find existing session for this order
         if (role === 'consumer') {
-          // TODO: Get actual sales_rep_id from supplier staff
-          // For now, using placeholder - backend should handle this better
-          const salesRepId = 1; // TODO: Get from supplier staff API
-          const session = await chat.getOrCreateChatSessionForOrder(orderId, salesRepId);
+          // Backend will auto-assign sales rep based on order's supplier
+          const session = await chat.getOrCreateChatSessionForOrder(orderId, null);
           if (mounted) setSessionId(session.id);
         } else {
           // Supplier: find existing session for this order
