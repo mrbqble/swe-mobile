@@ -7,11 +7,9 @@ import ForgotPasswordScreen from './modules/auth/ForgotPasswordScreen'
 import LanguagePickerScreen from './modules/auth/LanguagePickerScreen'
 import ConsumerHomeScreen from './modules/consumer/ConsumerHomeScreen'
 import SupplierHomeScreen from './modules/supplier/SupplierHomeScreen'
-import SupplierRequestsScreen from './modules/supplier/SupplierRequestsScreen'
 import SupplierCatalogScreen from './modules/supplier/SupplierCatalogScreen'
 import SupplierOrdersScreen from './modules/supplier/SupplierOrdersScreen'
 import SupplierProfileScreen from './modules/supplier/SupplierProfileScreen'
-import SupplierEditProfileScreen from './modules/supplier/SupplierEditProfileScreen'
 import SupplierOrderDetailScreen from './modules/supplier/SupplierOrderDetailScreen'
 import SupplierComplaintsScreen from './modules/supplier/SupplierComplaintsScreen'
 import SupplierComplaintDetailScreen from './modules/supplier/SupplierComplaintDetailScreen'
@@ -61,7 +59,14 @@ export default function App() {
 					const userData = await getMe()
 					setUser(userData)
 					// Determine role from user data
-					const userRole = userData.role === 'consumer' ? 'consumer' : userData.role === 'supplier_owner' ? 'supplier' : null
+					// consumer -> consumer
+					// supplier_owner, supplier_manager, supplier_sales -> supplier
+					let userRole: UserRole = null
+					if (userData.role === 'consumer') {
+						userRole = 'consumer'
+					} else if (userData.role === 'supplier_sales') {
+						userRole = 'supplier'
+					}
 					if (userRole) {
 						setRole(userRole)
 						setSignedIn(true)
@@ -108,11 +113,13 @@ export default function App() {
 	const [supplierSelectedComplaintId, setSupplierSelectedComplaintId] = useState<string | null>(null)
 	const [supplierChatReturnTo, setSupplierChatReturnTo] = useState<string>('supplier-order-detail')
 	const [supplierComplaintReturnTo, setSupplierComplaintReturnTo] = useState<string>('supplier-orders')
+	const [supplierOrdersInitialFilters, setSupplierOrdersInitialFilters] = useState<any>(null)
+	const [supplierComplaintsInitialFilters, setSupplierComplaintsInitialFilters] = useState<any>(null)
 
 	// Navigation helper functions with history tracking
 	const navigateConsumerTo = (screen: string, addToHistory: boolean = true) => {
 		if (addToHistory && consumerScreen !== screen) {
-			setConsumerHistory(prev => [...prev, consumerScreen])
+			setConsumerHistory((prev) => [...prev, consumerScreen])
 		}
 		setConsumerScreen(screen)
 	}
@@ -120,30 +127,53 @@ export default function App() {
 	const navigateConsumerBack = () => {
 		if (consumerHistory.length > 1) {
 			const previousScreen = consumerHistory[consumerHistory.length - 1]
-			setConsumerHistory(prev => prev.slice(0, -1))
+			setConsumerHistory((prev) => prev.slice(0, -1))
 			setConsumerScreen(previousScreen)
 			// Refresh home screen if going back to it
 			if (previousScreen === 'consumer-home') {
-				setHomeScreenRefreshKey(prev => prev + 1)
+				setHomeScreenRefreshKey((prev) => prev + 1)
 			}
 		} else {
 			// Fallback to home if no history
 			setConsumerScreen('consumer-home')
-			setHomeScreenRefreshKey(prev => prev + 1)
+			setHomeScreenRefreshKey((prev) => prev + 1)
 		}
 	}
 
-	const navigateSupplierTo = (screen: string, addToHistory: boolean = true) => {
-		if (addToHistory && supplierScreen !== screen) {
-			setSupplierHistory(prev => [...prev, supplierScreen])
+	const navigateSupplierTo = (screen: string, addToHistory: boolean = true, options?: { initialFilters?: any }) => {
+		// Parse screen string for query parameters (e.g., "supplier-orders?filters=...")
+		const [screenName] = screen.split('?')
+
+		if (addToHistory && supplierScreen !== screenName) {
+			setSupplierHistory((prev) => [...prev, supplierScreen])
 		}
-		setSupplierScreen(screen)
+		setSupplierScreen(screenName)
+
+		// Store initial filters for orders screen
+		if (screenName === 'supplier-orders') {
+			if (options?.initialFilters) {
+				setSupplierOrdersInitialFilters(options.initialFilters)
+			} else {
+				// Clear filters when navigating from tab (no initial filters)
+				setSupplierOrdersInitialFilters(null)
+			}
+		}
+
+		// Store initial filters for complaints screen
+		if (screenName === 'complaints') {
+			if (options?.initialFilters) {
+				setSupplierComplaintsInitialFilters(options.initialFilters)
+			} else {
+				// Clear filters when navigating from tab (no initial filters)
+				setSupplierComplaintsInitialFilters(null)
+			}
+		}
 	}
 
 	const navigateSupplierBack = () => {
 		if (supplierHistory.length > 1) {
 			const previousScreen = supplierHistory[supplierHistory.length - 1]
-			setSupplierHistory(prev => prev.slice(0, -1))
+			setSupplierHistory((prev) => prev.slice(0, -1))
 			setSupplierScreen(previousScreen)
 		} else {
 			// Fallback to home if no history
@@ -249,7 +279,7 @@ export default function App() {
 	if (role === 'supplier') {
 		// navigateSupplierTo is now defined above with history tracking
 		// Use company_name for supplier staff, fallback to user's name if not available
-		const supplierName = user?.company_name || (user ? `${user.first_name} ${user.last_name}`.trim() : undefined)
+		const supplierName = user ? `${user.first_name} ${user.last_name}`.trim() : undefined
 
 		return (
 			<SafeAreaProvider>
@@ -261,18 +291,12 @@ export default function App() {
 							navigateTo={navigateSupplierTo}
 						/>
 					)}
-					{supplierScreen === 'link-requests' && (
-						<SupplierRequestsScreen
-							language={language as 'en' | 'ru'}
-							navigateTo={navigateSupplierTo}
-							supplierName={supplierName}
-						/>
-					)}
 					{supplierScreen === 'supplier-catalog' && (
 						<SupplierCatalogScreen
 							language={language as 'en' | 'ru'}
 							navigateTo={navigateSupplierTo}
 							supplierName={supplierName}
+							user={user}
 						/>
 					)}
 					{supplierScreen === 'supplier-orders' && (
@@ -284,6 +308,7 @@ export default function App() {
 								navigateSupplierTo('supplier-order-detail')
 							}}
 							supplierName={supplierName}
+							initialFilters={supplierOrdersInitialFilters}
 						/>
 					)}
 					{supplierScreen === 'complaints' && (
@@ -291,6 +316,8 @@ export default function App() {
 							supplierName={supplierName}
 							onBack={navigateSupplierBack}
 							language={language as 'en' | 'ru'}
+							navigateTo={navigateSupplierTo}
+							initialFilters={supplierComplaintsInitialFilters}
 							onOpenComplaint={(id: string) => {
 								setSupplierSelectedComplaintId(id)
 								setSupplierComplaintReturnTo('complaints')
@@ -354,18 +381,6 @@ export default function App() {
 							navigateTo={navigateSupplierTo}
 							supplierName={supplierName}
 							user={user}
-							onEdit={() => navigateSupplierTo('supplier-edit-profile')}
-						/>
-					)}
-					{supplierScreen === 'supplier-edit-profile' && (
-						<SupplierEditProfileScreen
-							user={user}
-							language={language as 'en' | 'ru'}
-							onBack={navigateSupplierBack}
-							onSave={async (updatedUser) => {
-								setUser(updatedUser)
-								navigateSupplierBack()
-							}}
 						/>
 					)}
 					<ToastHost />
@@ -489,7 +504,7 @@ export default function App() {
 						sessionId={selectedChatSessionId}
 						messageId={selectedMessageId}
 						onBack={() => {
-								setSelectedChatSessionId(null)
+							setSelectedChatSessionId(null)
 							setSelectedMessageId(null)
 							navigateConsumerBack()
 						}}

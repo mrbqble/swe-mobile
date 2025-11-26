@@ -64,16 +64,15 @@ export async function getComplaint(complaintId: string | number): Promise<Compla
 /**
  * Get complaints (filtered by authenticated user's role)
  * Backend automatically filters: consumer sees own, supplier staff see assigned
+ * All additional filtering (status, consumer) is done on the frontend
  */
 export async function listComplaints(
 	page: number = 1,
-	size: number = PAGINATION.DEFAULT_PAGE_SIZE,
-	status?: ComplaintStatus
+	size: number = PAGINATION.DEFAULT_PAGE_SIZE
 ): Promise<{ items: Complaint[]; page: number; size: number; total: number; pages: number }> {
 	const q = new URLSearchParams();
 	q.set('page', String(page));
 	q.set('size', String(size));
-	if (status) q.set('status', status);
 	const res = await httpClient.fetchJson(`/complaints?${q.toString()}`);
 	const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
 	return {

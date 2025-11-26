@@ -297,6 +297,20 @@ export const translations = {
 				statusPending: 'Pending',
 				statusAccepted: 'Accepted',
 				statusInProgress: 'In Progress',
+				allStatuses: 'All Statuses',
+				allOrders: 'All Orders',
+				allSuppliers: 'All Suppliers',
+				withComplaint: 'With Complaint',
+				withoutComplaint: 'Without Complaint',
+				hasComplaint: 'Has Complaint',
+				filters: 'Filters',
+				clearFilters: 'Clear',
+				filterByStatus: 'Filter by Status',
+				filterBySupplier: 'Filter by Supplier',
+				filterByComplaint: 'Filter by Complaint',
+				filterByAmount: 'Filter by Total Amount',
+				minAmount: 'Min Amount',
+				maxAmount: 'Max Amount',
 				statusCompleted: 'Completed',
 				statusRejected: 'Rejected'
 			},
@@ -314,7 +328,21 @@ export const translations = {
 				statusAccepted: 'Принят',
 				statusInProgress: 'В процессе',
 				statusCompleted: 'Завершен',
-				statusRejected: 'Отклонен'
+				statusRejected: 'Отклонен',
+				allStatuses: 'Все статусы',
+				allOrders: 'Все заказы',
+				allSuppliers: 'Все поставщики',
+				withComplaint: 'С жалобой',
+				withoutComplaint: 'Без жалобы',
+				hasComplaint: 'Есть жалоба',
+				filters: 'Фильтры',
+				clearFilters: 'Очистить',
+				filterByStatus: 'Фильтр по статусу',
+				filterBySupplier: 'Фильтр по поставщику',
+				filterByComplaint: 'Фильтр по жалобе',
+				filterByAmount: 'Фильтр по сумме',
+				minAmount: 'Мин. сумма',
+				maxAmount: 'Макс. сумма'
 			}
 		},
 		orderDetail: {
@@ -589,8 +617,8 @@ export const translations = {
 				statusAccepted: 'Accepted',
 				statusDenied: 'Denied',
 				statusBlocked: 'Blocked',
-					statusRejected: 'Rejected',
-					openChat: 'Chat'
+				statusRejected: 'Rejected',
+				openChat: 'Chat'
 			},
 			ru: {
 				linkedSuppliers: 'Связанные поставщики',
@@ -605,8 +633,8 @@ export const translations = {
 				statusAccepted: 'Принято',
 				statusDenied: 'Отклонено',
 				statusBlocked: 'Заблокировано',
-					statusRejected: 'Отклонено',
-					openChat: 'Чат'
+				statusRejected: 'Отклонено',
+				openChat: 'Чат'
 			}
 		},
 		notifications: {
@@ -638,7 +666,9 @@ export const translations = {
 				currency: '₸',
 				pendingRequests: 'Pending Link Requests',
 				openOrders: 'Open Orders',
-				complaints: 'Active Complaints',
+				allOrders: 'All Orders',
+				openComplaints: 'Open Complaints',
+				allComplaints: 'All Complaints',
 				viewAll: 'View All',
 				requests: 'requests',
 				orders: 'orders',
@@ -654,7 +684,9 @@ export const translations = {
 				currency: '₸',
 				pendingRequests: 'Ожидающие запросы',
 				openOrders: 'Открытые заказы',
-				complaints: 'Активные жалобы',
+				allOrders: 'Все заказы',
+				openComplaints: 'Открытые жалобы',
+				allComplaints: 'Все жалобы',
 				viewAll: 'Показать все',
 				requests: 'запросов',
 				orders: 'заказов',
@@ -793,7 +825,7 @@ export const translations = {
 		},
 		orders: {
 			en: {
-				orders: 'Orders',
+				orders: 'All Orders',
 				noOrders: 'No orders yet',
 				noOrdersDesc: 'Customer orders will appear here',
 				order: 'Order',
@@ -806,10 +838,23 @@ export const translations = {
 				statusAccepted: 'Accepted',
 				statusInProgress: 'In Progress',
 				statusCompleted: 'Completed',
-				statusRejected: 'Rejected'
+				statusRejected: 'Rejected',
+				loading: 'Loading...',
+				allStatuses: 'All Statuses',
+				allOrders: 'All Orders',
+				withComplaint: 'With Complaint',
+				withoutComplaint: 'Without Complaint',
+				hasComplaint: 'Has Complaint',
+				filters: 'Filters',
+				clearFilters: 'Clear',
+				filterByStatus: 'Filter by Status',
+				filterByComplaint: 'Filter by Complaint',
+				filterByAmount: 'Filter by Total Amount',
+				minAmount: 'Min Amount',
+				maxAmount: 'Max Amount'
 			},
 			ru: {
-				orders: 'Заказы',
+				orders: 'Все заказы',
 				noOrders: 'Заказов пока нет',
 				noOrdersDesc: 'Заказы клиентов будут отображаться здесь',
 				order: 'Заказ',
@@ -822,7 +867,20 @@ export const translations = {
 				statusAccepted: 'Принят',
 				statusInProgress: 'В процессе',
 				statusCompleted: 'Завершен',
-				statusRejected: 'Отклонен'
+				statusRejected: 'Отклонен',
+				loading: 'Загрузка...',
+				allStatuses: 'Все статусы',
+				allOrders: 'Все заказы',
+				withComplaint: 'С жалобой',
+				withoutComplaint: 'Без жалобы',
+				hasComplaint: 'Есть жалоба',
+				filters: 'Фильтры',
+				clearFilters: 'Очистить',
+				filterByStatus: 'Фильтр по статусу',
+				filterByComplaint: 'Фильтр по жалобе',
+				filterByAmount: 'Фильтр по сумме',
+				minAmount: 'Мин. сумма',
+				maxAmount: 'Макс. сумма'
 			}
 		},
 		orderDetail: {
@@ -972,19 +1030,45 @@ export const translations = {
 		complaints: {
 			en: {
 				complaints: 'Complaints',
+				complaint: 'Complaint',
 				noDescription: 'No description provided',
 				noComplaints: 'No complaints yet',
 				statusOpen: 'Open',
 				statusEscalated: 'Escalated',
-				statusResolved: 'Resolved'
+				statusResolved: 'Resolved',
+				allStatuses: 'All Statuses',
+				allConsumers: 'All Consumers',
+				consumer: 'Consumer',
+				order: 'Order',
+				filterByStatus: 'Filter by Status',
+				filterByConsumer: 'Filter by Consumer',
+				filters: 'Filters',
+				clearFilters: 'Clear Filters',
+				apply: 'Apply',
+				satisfied: 'Satisfied',
+				notSatisfied: 'Not Satisfied',
+				pendingFeedback: 'Pending feedback'
 			},
 			ru: {
 				complaints: 'Жалобы',
+				complaint: 'Жалоба',
 				noDescription: 'Описание не предоставлено',
 				noComplaints: 'Жалоб пока нет',
 				statusOpen: 'Открыта',
 				statusEscalated: 'Эскалирована',
-				statusResolved: 'Решена'
+				statusResolved: 'Решена',
+				allStatuses: 'Все статусы',
+				allConsumers: 'Все потребители',
+				consumer: 'Потребитель',
+				order: 'Заказ',
+				filterByStatus: 'Фильтр по статусу',
+				filterByConsumer: 'Фильтр по потребителю',
+				filters: 'Фильтры',
+				clearFilters: 'Очистить фильтры',
+				apply: 'Применить',
+				satisfied: 'Доволен',
+				notSatisfied: 'Не доволен',
+				pendingFeedback: 'Ожидается отзыв'
 			}
 		}
 	},

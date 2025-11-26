@@ -5,13 +5,16 @@ export type OrderStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' |
 export type OrderItemCreate = { product_id: number | string; qty: number };
 export type Order = any;
 
-export async function listOrders(params: { page?: number; size?: number; status?: string } = {}) {
+export async function listOrders(params: {
+  page?: number;
+  size?: number;
+} = {}) {
   const q = new URLSearchParams();
   if (params.page) q.set('page', String(params.page));
   if (params.size) q.set('size', String(params.size));
-  if (params.status) q.set('status', String(params.status));
   const res = await httpClient.fetchJson(`/orders?${q.toString()}`);
   // Backend returns pagination object { items: [...], page, size, total, pages }
+  // All filtering is done on the frontend
   return res;
 }
 
@@ -56,6 +59,7 @@ function normalizeOrder(order: any) {
     total_kzt: order.total_kzt,
     date: order.created_at,
     created_at: order.created_at,
+    has_complaint: order.has_complaint || false,
     items: items.map((item: any) => ({
       id: item.id,
       product_id: item.product_id,

@@ -39,6 +39,7 @@ function normalizeOrder(order: any) {
 		total_kzt: order.total_kzt,
 		date: order.created_at,
 		created_at: order.created_at,
+		has_complaint: order.has_complaint || false,
 		items: items.map((item: any) => ({
 			id: item.id,
 			product_id: item.product_id,
@@ -55,18 +56,22 @@ function normalizeOrder(order: any) {
 	}
 }
 
-async function fetchOrders(consumerId?: string | number) {
+async function fetchOrders() {
 	// Backend automatically filters by role - consumer sees own orders
-	const res = await (ordersApi as any).listOrders({ page: 1, size: 50 })
+	// All other filtering is done client-side
+	const res = await (ordersApi as any).listOrders({
+		page: 1,
+		size: 100 // Increased to show all orders
+	})
 	const items = extractOrdersItems(res)
 	// Normalize order data for frontend
 	return items.map((order: any) => normalizeOrder(order))
 }
 
-export function useOrders(consumerId?: string | number) {
+export function useOrders() {
 	const { data, loading, error, execute } = useAsync<any[]>({
-		fn: () => fetchOrders(consumerId),
-		dependencies: [consumerId],
+		fn: () => fetchOrders(),
+		dependencies: [],
 		transform: (items) => items || []
 	})
 

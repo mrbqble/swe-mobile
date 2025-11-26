@@ -13,8 +13,7 @@ export default function SupplierProfileScreen({
 	onLogout,
 	navigateTo,
 	supplierName,
-	user,
-	onEdit
+	user
 }: {
 	language?: 'en' | 'ru'
 	onLanguageChange?: (l: 'en' | 'ru') => void
@@ -22,7 +21,6 @@ export default function SupplierProfileScreen({
 	navigateTo?: (s: string) => void
 	supplierName?: string
 	user?: User
-	onEdit?: () => void
 }) {
 	const t = getTranslations('supplier', 'profile', language)
 
@@ -42,18 +40,6 @@ export default function SupplierProfileScreen({
 					/>
 				</TouchableOpacity>
 				<Text style={{ fontSize: 18, fontWeight: '600' }}>{t.profile}</Text>
-				{typeof onEdit === 'function' && (
-					<TouchableOpacity
-						onPress={onEdit}
-						style={{ position: 'absolute', right: 12, top: 12, padding: 8 }}
-					>
-						<Feather
-							name="edit-2"
-							size={20}
-							color="#2563eb"
-						/>
-					</TouchableOpacity>
-				)}
 			</View>
 
 			<ScrollView

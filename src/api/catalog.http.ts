@@ -111,37 +111,30 @@ export async function listSuppliers({ q, page = 1, size = 20 }: { q?: string; pa
   };
 }
 
-// Fetch products for the authenticated supplier (supplier owner/manager only)
+// Fetch products for the authenticated supplier (supplier owner/manager/sales rep)
 export async function fetchMyProducts({ page = 1, size = PAGINATION.CATALOG_PAGE_SIZE, search }: { page?: number; size?: number; search?: string } = {}): Promise<PaginatedResponse<Product>> {
   // Use /products/me endpoint - backend filters by authenticated user's supplier
+  // Now supports sales reps in addition to owners/managers
   const q = new URLSearchParams();
   q.set('page', String(page));
   q.set('size', String(size));
+  if (search && search.trim()) {
+    q.set('q', search.trim());
+  }
   const res = await httpClient.fetchJson(`/products/me?${q.toString()}`);
 
   // backend returns { items: [...], page, size, total, pages }
   const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
 
-  // Filter by search query on client side if provided
-  let filteredItems = items;
-  if (search && search.trim()) {
-    const searchLower = search.toLowerCase();
-    filteredItems = items.filter((p: any) =>
-      p.name?.toLowerCase().includes(searchLower) ||
-      p.description?.toLowerCase().includes(searchLower) ||
-      p.sku?.toLowerCase().includes(searchLower)
-    );
-  }
-
   const meta = {
     page: res?.page ?? page,
     limit: res?.size ?? size,
-    total: filteredItems.length,
-    pages: Math.ceil(filteredItems.length / size),
+    total: res?.total ?? items.length,
+    pages: res?.pages ?? Math.ceil(items.length / size),
   };
 
   // Map backend ProductResponse to mobile Product shape
-  const data: Product[] = (filteredItems || []).map((p: any) => ({
+  const data: Product[] = (items || []).map((p: any) => ({
     id: p.id,
     name: p.name,
     sku: p.sku,
@@ -150,6 +143,7 @@ export async function fetchMyProducts({ page = 1, size = PAGINATION.CATALOG_PAGE
     price: typeof p.price_kzt === 'string' ? parseFloat(p.price_kzt) : Number(p.price_kzt || 0),
     currency: p.currency || 'KZT',
     stock: p.stock_qty ?? p.stock ?? 0,
+    minOrderQty: p.min_order_qty ?? undefined,
     imageUrl: p.image_url || p.imageUrl || undefined,
     supplier: '', // supplier name not provided by product response
     supplierId: p.supplier_id ?? p.supplierId,

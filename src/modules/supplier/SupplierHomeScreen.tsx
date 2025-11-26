@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { styles } from '../../styles/supplier/SupplierHomeScreen.styles'
-import { linkedSuppliers, orders, complaints } from '../../api'
+import { orders, complaints } from '../../api'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Feather, MaterialIcons } from '@expo/vector-icons'
 import { emitter } from '../../helpers/events'
 import { getTranslations, type Language } from '../../translations'
-import { LINK_STATUS, ORDER_STATUS, COMPLAINT_STATUS } from '../../constants'
+import { ORDER_STATUS, COMPLAINT_STATUS } from '../../constants'
 
 export default function SupplierHomeScreen({
 	language = 'en',
@@ -18,7 +18,6 @@ export default function SupplierHomeScreen({
 	navigateTo?: (screen: string) => void
 }) {
 	const t = getTranslations('supplier', 'home', language)
-	const [pendingRequestsCount, setPendingRequestsCount] = useState<number | null>(null)
 	const [openOrdersCount, setOpenOrdersCount] = useState<number | null>(null)
 	const [activeComplaintsCount, setActiveComplaintsCount] = useState<number | null>(null)
 
@@ -26,22 +25,6 @@ export default function SupplierHomeScreen({
 		let mounted = true
 		const load = async () => {
 			try {
-				// Fetch pending link requests for supplier
-				let pending = 0
-				try {
-					const reqs = await linkedSuppliers.fetchLinkRequests()
-
-					pending = Array.isArray(reqs)
-						? reqs.filter((r: any) => {
-								// Use statusOriginal if available (from normalization), otherwise check status
-								const status = r.statusOriginal || String(r.status || '').toLowerCase()
-								return status.toLowerCase() === LINK_STATUS.PENDING.toLowerCase()
-							}).length
-						: 0
-				} catch (e) {
-					console.error('Failed to fetch link requests:', e)
-				}
-
 				// Fetch open orders for supplier (backend filters by role automatically)
 				let open = 0
 				try {
@@ -62,7 +45,7 @@ export default function SupplierHomeScreen({
 					active = Array.isArray(res.items)
 						? res.items.filter((c: any) => {
 								const status = String(c.status || '').toLowerCase()
-								return status !== COMPLAINT_STATUS.RESOLVED.toLowerCase()
+								return status !== COMPLAINT_STATUS.RESOLVED.toLowerCase() && status !== COMPLAINT_STATUS.ESCALATED.toLowerCase()
 							}).length
 						: 0
 				} catch (e) {
@@ -70,50 +53,30 @@ export default function SupplierHomeScreen({
 				}
 
 				if (mounted) {
-					setPendingRequestsCount(pending)
 					setOpenOrdersCount(open)
 					setActiveComplaintsCount(active)
 				}
 			} catch (e) {
 				console.error('Failed to load home screen data:', e)
 				if (mounted) {
-					setPendingRequestsCount(0)
 					setOpenOrdersCount(0)
 					setActiveComplaintsCount(0)
 				}
 			}
 		}
 		load()
-		const off1 = emitter.on('linkRequestsChanged', load)
-		const off2 = emitter.on('ordersChanged', load)
-		const off3 = emitter.on('complaintsChanged', load)
+		const off1 = emitter.on('ordersChanged', load)
+		const off2 = emitter.on('complaintsChanged', load)
 		return () => {
 			mounted = false
 			try {
 				off1()
 				off2()
-				off3()
 			} catch (e) {}
 		}
 	}, [])
 
 	const kpis = [
-		{
-			id: 'link-requests',
-			title: t.pendingRequests,
-			value: pendingRequestsCount ?? 0,
-			unit: t.requests,
-			icon: () => (
-				<Feather
-					name="link"
-					size={24}
-					color="#2563eb"
-				/>
-			),
-			color: '#e0e7ff',
-			iconBg: '#eff6ff',
-			screen: 'link-requests'
-		},
 		{
 			id: 'supplier-orders',
 			title: t.openOrders,
@@ -128,11 +91,14 @@ export default function SupplierHomeScreen({
 			),
 			color: '#bbf7d0',
 			iconBg: '#f0fdf4',
-			screen: 'supplier-orders'
+			screen: 'supplier-orders',
+			initialFilters: {
+				status: [ORDER_STATUS.PENDING.toLowerCase(), ORDER_STATUS.ACCEPTED.toLowerCase(), ORDER_STATUS.IN_PROGRESS_LOWER.toLowerCase()]
+			}
 		},
 		{
 			id: 'complaints',
-			title: t.complaints,
+			title: t.openComplaints,
 			value: activeComplaintsCount ?? 0,
 			unit: t.issues,
 			icon: () => (
@@ -144,7 +110,8 @@ export default function SupplierHomeScreen({
 			),
 			color: '#fed7aa',
 			iconBg: '#fff7ed',
-			screen: 'complaints'
+			screen: 'complaints',
+			initialFilters: { status: [COMPLAINT_STATUS.OPEN.toLowerCase()] }
 		}
 	]
 
@@ -155,16 +122,6 @@ export default function SupplierHomeScreen({
 			icon: () => (
 				<Feather
 					name="home"
-					size={22}
-				/>
-			)
-		},
-		{
-			id: 'link-requests',
-			label: t.pendingRequests,
-			icon: () => (
-				<Feather
-					name="link"
 					size={22}
 				/>
 			)
@@ -181,10 +138,20 @@ export default function SupplierHomeScreen({
 		},
 		{
 			id: 'supplier-orders',
-			label: t.openOrders,
+			label: t.allOrders,
 			icon: () => (
 				<Feather
 					name="package"
+					size={22}
+				/>
+			)
+		},
+		{
+			id: 'complaints',
+			label: t.allComplaints,
+			icon: () => (
+				<MaterialIcons
+					name="report-problem"
 					size={22}
 				/>
 			)
@@ -232,7 +199,16 @@ export default function SupplierHomeScreen({
 					<TouchableOpacity
 						key={kpi.id}
 						style={styles.kpiCard}
-						onPress={() => navigateTo && navigateTo(kpi.screen)}
+						onPress={() => {
+							if (navigateTo) {
+								// Pass initial filters if available (for orders and complaints screens)
+								if ((kpi.screen === 'supplier-orders' || kpi.screen === 'complaints') && (kpi as any).initialFilters) {
+									;(navigateTo as any)(kpi.screen, true, { initialFilters: (kpi as any).initialFilters })
+								} else {
+									navigateTo(kpi.screen)
+								}
+							}
+						}}
 						activeOpacity={0.8}
 					>
 						<View style={[styles.kpiIconCircle, { backgroundColor: kpi.iconBg }]}>{kpi.icon()}</View>
