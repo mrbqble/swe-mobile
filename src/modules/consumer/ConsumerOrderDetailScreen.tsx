@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, FlatList, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { styles } from '../../styles/consumer/ConsumerOrderDetailScreen.styles'
 import { Feather } from '@expo/vector-icons'
 import { orders, complaints } from '../../api'
@@ -27,10 +27,55 @@ export default function ConsumerOrderDetailScreen({
 	const [order, setOrder] = useState<any | null>(null)
 	const L = getTranslations('consumer', 'orderDetail', language ?? 'en')
 	const [loading, setLoading] = useState(false)
+	const [reordering, setReordering] = useState(false)
 	const [complaintModalVisible, setComplaintModalVisible] = useState(false)
 	const [complaint, setComplaint] = useState<any | null>(null)
 	// Check if feedback has been given based on complaint data
 	const feedbackGiven = complaint?.consumer_feedback !== null && complaint?.consumer_feedback !== undefined
+
+	const handleReorder = async () => {
+		if (!order || !order.items || order.items.length === 0) return
+
+		try {
+			setReordering(true)
+			const supplier_id = order.supplier_id
+			if (!supplier_id) {
+				throw new Error('Supplier information is missing')
+			}
+
+			// Create new order with same items
+			const items = order.items.map((item: any) => ({
+				product_id: item.product_id || item.productId,
+				qty: item.qty || item.quantity || 1
+			}))
+
+			const newOrder = await orders.createOrder(supplier_id, items)
+			emitter.emit('ordersChanged')
+
+			const commonT = getTranslations('shared', 'common', language || 'en')
+			toastShow(
+				commonT.success || 'Success',
+				L.reorderSuccess || 'Order placed successfully!'
+			)
+
+			// Optionally navigate to orders screen or refresh
+			// For now, just show success message
+		} catch (err: any) {
+			console.error('Failed to reorder:', err)
+			const commonT = getTranslations('shared', 'common', language || 'en')
+			const errorMsg = err?.body?.detail || err?.message || L.reorderFailed || 'Failed to reorder'
+			toastShow(commonT.error || 'Error', errorMsg)
+		} finally {
+			setReordering(false)
+		}
+	}
+
+	const canReorder = (): boolean => {
+		if (!order) return false
+		const status = (order.status || '').toLowerCase()
+		// Allow reorder only for completed orders
+		return status === 'completed'
+	}
 
 	const Timeline = () => {
 		const steps = [
@@ -275,6 +320,32 @@ export default function ConsumerOrderDetailScreen({
 									)}
 								</Text>
 							</View>
+
+							{/* Reorder button - only show for completed or accepted orders */}
+							{canReorder() && (
+								<TouchableOpacity
+									onPress={handleReorder}
+									disabled={reordering}
+									style={{
+										marginTop: 16,
+										padding: 12,
+										borderRadius: 8,
+										backgroundColor: '#2563eb',
+										alignItems: 'center',
+										opacity: reordering ? 0.6 : 1
+									}}
+								>
+									{reordering ? (
+										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+											<ActivityIndicator size="small" color="#fff" />
+											<Text style={{ color: '#fff', fontWeight: '600' }}>{L.reordering || 'Placing order...'}</Text>
+										</View>
+									) : (
+										<Text style={{ color: '#fff', fontWeight: '700' }}>{L.reorder || 'Reorder'}</Text>
+									)}
+								</TouchableOpacity>
+							)}
+
 							<TouchableOpacity
 								onPress={() => {
 									try {
@@ -282,7 +353,7 @@ export default function ConsumerOrderDetailScreen({
 									} catch (e) {}
 								}}
 								style={{
-									marginTop: 16,
+									marginTop: 12,
 									padding: 12,
 									borderRadius: 8,
 									backgroundColor: '#fff',

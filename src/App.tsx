@@ -3,14 +3,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View } from 'react-native'
 import SignInScreen from './modules/auth/SignInScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
+import ForgotPasswordScreen from './modules/auth/ForgotPasswordScreen'
 import LanguagePickerScreen from './modules/auth/LanguagePickerScreen'
 import ConsumerHomeScreen from './modules/consumer/ConsumerHomeScreen'
 import SupplierHomeScreen from './modules/supplier/SupplierHomeScreen'
 import SupplierRequestsScreen from './modules/supplier/SupplierRequestsScreen'
 import SupplierCatalogScreen from './modules/supplier/SupplierCatalogScreen'
-import SupplierAddItemScreen from './modules/supplier/SupplierAddItemScreen'
 import SupplierOrdersScreen from './modules/supplier/SupplierOrdersScreen'
 import SupplierProfileScreen from './modules/supplier/SupplierProfileScreen'
+import SupplierEditProfileScreen from './modules/supplier/SupplierEditProfileScreen'
 import SupplierOrderDetailScreen from './modules/supplier/SupplierOrderDetailScreen'
 import SupplierComplaintsScreen from './modules/supplier/SupplierComplaintsScreen'
 import SupplierComplaintDetailScreen from './modules/supplier/SupplierComplaintDetailScreen'
@@ -23,10 +24,13 @@ import ConsumerSuppliersScreen from './modules/consumer/ConsumerSuppliersScreen'
 import ConsumerOrderDetailScreen from './modules/consumer/ConsumerOrderDetailScreen'
 import ConsumerRequestLinkScreen from './modules/consumer/ConsumerRequestLinkScreen'
 import ConsumerProfileScreen from './modules/consumer/ConsumerProfileScreen'
+import ConsumerEditProfileScreen from './modules/consumer/ConsumerEditProfileScreen'
+import ConsumerNotificationsScreen from './modules/consumer/ConsumerNotificationsScreen'
 import { linkedSuppliers, auth } from './api'
 import ToastHost from './modules/shared/ToastHost'
 import { getMe, User } from './api/user.http'
 import { getAccessToken } from './api/token'
+import { getLanguage, setLanguage as saveLanguage, clearLanguage } from './api/languageStorage'
 
 type Language = 'en' | 'ru'
 type UserRole = 'consumer' | 'supplier' | null
@@ -36,13 +40,21 @@ export default function App() {
 	const [signedIn, setSignedIn] = useState(false)
 	const [role, setRole] = useState<UserRole>(null)
 	const [showRegister, setShowRegister] = useState(false)
+	const [showForgotPassword, setShowForgotPassword] = useState(false)
 	const [user, setUser] = useState<User>()
 	const [initializing, setInitializing] = useState(true)
 
-	// Check for existing token on app startup
+	// Check for existing token and language preference on app startup
 	useEffect(() => {
 		;(async () => {
 			try {
+				// Load language preference first
+				const storedLanguage = await getLanguage()
+				if (storedLanguage) {
+					setLanguage(storedLanguage)
+				}
+
+				// Then check for existing token
 				const token = await getAccessToken()
 				if (token) {
 					// Token exists, try to fetch user data
@@ -78,15 +90,66 @@ export default function App() {
 		}
 	}, [signedIn])
 
+	// Navigation history stacks for tracking previous screens
+	const [consumerHistory, setConsumerHistory] = useState<string[]>(['consumer-home'])
+	const [supplierHistory, setSupplierHistory] = useState<string[]>(['supplier-home'])
+
 	// Simple screen navigation for the consumer UI
 	const [consumerScreen, setConsumerScreen] = useState<string>('consumer-home')
 	const [selectedProductId, setSelectedProductId] = useState<number | string | null>(null)
 	const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+	const [selectedChatSessionId, setSelectedChatSessionId] = useState<string | null>(null)
+	const [selectedMessageId, setSelectedMessageId] = useState<string | number | null>(null)
+	const [orderDetailReturnTo, setOrderDetailReturnTo] = useState<string>('consumer-orders')
+	const [homeScreenRefreshKey, setHomeScreenRefreshKey] = useState(0)
 	// supplier navigation state (keep hooks at top-level to preserve hook order)
 	const [supplierScreen, setSupplierScreen] = useState<string>('supplier-home')
 	const [supplierSelectedOrderId, setSupplierSelectedOrderId] = useState<string | null>(null)
 	const [supplierSelectedComplaintId, setSupplierSelectedComplaintId] = useState<string | null>(null)
 	const [supplierChatReturnTo, setSupplierChatReturnTo] = useState<string>('supplier-order-detail')
+	const [supplierComplaintReturnTo, setSupplierComplaintReturnTo] = useState<string>('supplier-orders')
+
+	// Navigation helper functions with history tracking
+	const navigateConsumerTo = (screen: string, addToHistory: boolean = true) => {
+		if (addToHistory && consumerScreen !== screen) {
+			setConsumerHistory(prev => [...prev, consumerScreen])
+		}
+		setConsumerScreen(screen)
+	}
+
+	const navigateConsumerBack = () => {
+		if (consumerHistory.length > 1) {
+			const previousScreen = consumerHistory[consumerHistory.length - 1]
+			setConsumerHistory(prev => prev.slice(0, -1))
+			setConsumerScreen(previousScreen)
+			// Refresh home screen if going back to it
+			if (previousScreen === 'consumer-home') {
+				setHomeScreenRefreshKey(prev => prev + 1)
+			}
+		} else {
+			// Fallback to home if no history
+			setConsumerScreen('consumer-home')
+			setHomeScreenRefreshKey(prev => prev + 1)
+		}
+	}
+
+	const navigateSupplierTo = (screen: string, addToHistory: boolean = true) => {
+		if (addToHistory && supplierScreen !== screen) {
+			setSupplierHistory(prev => [...prev, supplierScreen])
+		}
+		setSupplierScreen(screen)
+	}
+
+	const navigateSupplierBack = () => {
+		if (supplierHistory.length > 1) {
+			const previousScreen = supplierHistory[supplierHistory.length - 1]
+			setSupplierHistory(prev => prev.slice(0, -1))
+			setSupplierScreen(previousScreen)
+		} else {
+			// Fallback to home if no history
+			setSupplierScreen('supplier-home')
+		}
+	}
 
 	if (initializing) {
 		// Show loading state while checking for existing session
@@ -104,7 +167,11 @@ export default function App() {
 			<SafeAreaProvider>
 				<View style={{ flex: 1 }}>
 					<LanguagePickerScreen
-						onLanguageSelect={setLanguage}
+						onLanguageSelect={async (selectedLanguage) => {
+							// Save language to AsyncStorage
+							await saveLanguage(selectedLanguage)
+							setLanguage(selectedLanguage)
+						}}
 						language={(language || 'en') as 'en' | 'ru'}
 					/>
 					<ToastHost />
@@ -117,33 +184,60 @@ export default function App() {
 		return (
 			<SafeAreaProvider>
 				<View style={{ flex: 1 }}>
-					{!showRegister && (
+					{!showRegister && !showForgotPassword && (
 						<SignInScreen
 							language={language}
-							onSignIn={(selectedRole: UserRole) => {
+							onSignIn={async (selectedRole: UserRole) => {
+								// Fetch user data after sign in
+								try {
+									const userData = await getMe()
+									setUser(userData)
+								} catch (error) {
+									console.error('Failed to fetch user data after sign in:', error)
+								}
 								setRole(selectedRole)
 								setSignedIn(true)
 								// reset navigation state for the selected role so we always land on the home screen
 								if (selectedRole === 'supplier') {
+									setSupplierHistory(['supplier-home'])
 									setSupplierScreen('supplier-home')
 								} else if (selectedRole === 'consumer') {
+									setConsumerHistory(['consumer-home'])
 									setConsumerScreen('consumer-home')
 								}
 							}}
 							onRegister={() => setShowRegister(true)}
+							onForgotPassword={() => setShowForgotPassword(true)}
 						/>
 					)}
 					{showRegister && (
 						<RegisterScreen
 							language={language as 'en' | 'ru'}
-							onRegistered={(user) => {
-								// After successful registration, sign in as consumer and navigate to consumer home
+							onRegistered={async (user) => {
+								// After successful registration, fetch user data and sign in as consumer
+								try {
+									const userData = await getMe()
+									setUser(userData)
+								} catch (error) {
+									console.error('Failed to fetch user data after registration:', error)
+								}
 								setRole('consumer')
 								setSignedIn(true)
+								setConsumerHistory(['consumer-home'])
 								setConsumerScreen('consumer-home')
 								setShowRegister(false)
 							}}
 							onCancel={() => setShowRegister(false)}
+						/>
+					)}
+					{showForgotPassword && (
+						<ForgotPasswordScreen
+							language={language as 'en' | 'ru'}
+							onBack={() => setShowForgotPassword(false)}
+							onPasswordReset={() => {
+								setShowForgotPassword(false)
+								// User can now log in with new password
+							}}
 						/>
 					)}
 					<ToastHost />
@@ -153,8 +247,9 @@ export default function App() {
 	}
 
 	if (role === 'supplier') {
-		const navigateSupplierTo = (screen: string) => setSupplierScreen(screen)
-		const supplierName = 'TechPro Supply'
+		// navigateSupplierTo is now defined above with history tracking
+		// Use company_name for supplier staff, fallback to user's name if not available
+		const supplierName = user?.company_name || (user ? `${user.first_name} ${user.last_name}`.trim() : undefined)
 
 		return (
 			<SafeAreaProvider>
@@ -164,13 +259,6 @@ export default function App() {
 							language={language as 'en' | 'ru'}
 							userName={supplierName}
 							navigateTo={navigateSupplierTo}
-						/>
-					)}
-					{supplierScreen === 'item-edit' && (
-						<SupplierAddItemScreen
-							language={language as 'en' | 'ru'}
-							navigateTo={navigateSupplierTo}
-							supplierName={supplierName}
 						/>
 					)}
 					{supplierScreen === 'link-requests' && (
@@ -193,7 +281,7 @@ export default function App() {
 							navigateTo={navigateSupplierTo}
 							onOrderSelect={(o: any) => {
 								setSupplierSelectedOrderId(o?.id || null)
-								setSupplierScreen('supplier-order-detail')
+								navigateSupplierTo('supplier-order-detail')
 							}}
 							supplierName={supplierName}
 						/>
@@ -201,33 +289,39 @@ export default function App() {
 					{supplierScreen === 'complaints' && (
 						<SupplierComplaintsScreen
 							supplierName={supplierName}
-							onBack={() => setSupplierScreen('supplier-home')}
+							onBack={navigateSupplierBack}
 							language={language as 'en' | 'ru'}
 							onOpenComplaint={(id: string) => {
 								setSupplierSelectedComplaintId(id)
-								setSupplierScreen('complaint-detail')
+								setSupplierComplaintReturnTo('complaints')
+								navigateSupplierTo('complaint-detail')
 							}}
 						/>
 					)}
 					{supplierScreen === 'complaint-detail' && (
 						<SupplierComplaintDetailScreen
 							complaintId={supplierSelectedComplaintId}
-							onBack={() => setSupplierScreen('complaints')}
+							onBack={navigateSupplierBack}
 							language={language as 'en' | 'ru'}
 							onOpenChat={(orderId) => {
 								setSupplierSelectedOrderId(orderId || null)
 								setSupplierChatReturnTo('complaint-detail')
-								setSupplierScreen('chat')
+								navigateSupplierTo('chat')
 							}}
 						/>
 					)}
 					{supplierScreen === 'supplier-order-detail' && (
 						<SupplierOrderDetailScreen
 							orderId={supplierSelectedOrderId}
-							onBack={() => setSupplierScreen('supplier-orders')}
+							onBack={navigateSupplierBack}
+							onOpenComplaint={(complaintId: string) => {
+								setSupplierSelectedComplaintId(complaintId)
+								setSupplierComplaintReturnTo('supplier-order-detail')
+								navigateSupplierTo('complaint-detail')
+							}}
 							onOpenChat={() => {
 								setSupplierChatReturnTo('supplier-order-detail')
-								setSupplierScreen('chat')
+								navigateSupplierTo('chat')
 							}}
 							language={language as 'en' | 'ru'}
 						/>
@@ -235,7 +329,7 @@ export default function App() {
 					{supplierScreen === 'chat' && (
 						<ChatScreen
 							orderId={supplierSelectedOrderId}
-							onBack={() => setSupplierScreen(supplierChatReturnTo)}
+							onBack={navigateSupplierBack}
 							role="supplier"
 							language={language as 'en' | 'ru'}
 						/>
@@ -243,9 +337,15 @@ export default function App() {
 					{supplierScreen === 'supplier-profile' && (
 						<SupplierProfileScreen
 							language={language as 'en' | 'ru'}
-							onLanguageChange={(l) => setLanguage(l)}
+							onLanguageChange={async (l) => {
+								// Save language to AsyncStorage
+								await saveLanguage(l)
+								setLanguage(l)
+							}}
 							onLogout={async () => {
 								await (auth as any).logout()
+								await clearLanguage()
+								setLanguage(null)
 								setUser(undefined)
 								setSignedIn(false)
 								setRole(null)
@@ -254,6 +354,18 @@ export default function App() {
 							navigateTo={navigateSupplierTo}
 							supplierName={supplierName}
 							user={user}
+							onEdit={() => navigateSupplierTo('supplier-edit-profile')}
+						/>
+					)}
+					{supplierScreen === 'supplier-edit-profile' && (
+						<SupplierEditProfileScreen
+							user={user}
+							language={language as 'en' | 'ru'}
+							onBack={navigateSupplierBack}
+							onSave={async (updatedUser) => {
+								setUser(updatedUser)
+								navigateSupplierBack()
+							}}
 						/>
 					)}
 					<ToastHost />
@@ -262,24 +374,24 @@ export default function App() {
 		)
 	}
 
-	// Default to consumer home
+	// Default to consumer home with history tracking
 	const navigateTo = (screen: string) => {
 		// Basic mapping: consumer-home, catalog, consumer-orders, linked-suppliers, consumer-profile
 		if (screen === 'catalog' || screen === 'consumer-catalog') {
-			setConsumerScreen('catalog')
+			navigateConsumerTo('catalog')
 			return
 		}
 		if (screen === 'consumer-home') {
-			setConsumerScreen('consumer-home')
+			navigateConsumerTo('consumer-home')
 			return
 		}
-		// handle other simple ids by setting screen directly
-		setConsumerScreen(screen)
+		// handle other simple ids by setting screen directly with history
+		navigateConsumerTo(screen)
 	}
 
 	const onProductSelect = (product: any) => {
 		setSelectedProductId(product?.id ?? null)
-		setConsumerScreen('product-detail')
+		navigateConsumerTo('product-detail')
 	}
 
 	return (
@@ -287,6 +399,7 @@ export default function App() {
 			<View style={{ flex: 1 }}>
 				{consumerScreen === 'consumer-home' && (
 					<ConsumerHomeScreen
+						key={`home-${homeScreenRefreshKey}`} // Force re-render when navigating back to home
 						language={language}
 						navigateTo={navigateTo}
 						userName={user ? `${user.first_name} ${user.last_name}` : undefined}
@@ -302,30 +415,35 @@ export default function App() {
 				{consumerScreen === 'product-detail' && (
 					<ConsumerProductDetailScreen
 						productId={selectedProductId}
-						onBack={() => setConsumerScreen('catalog')}
+						onBack={navigateConsumerBack}
 						language={language as 'en' | 'ru'}
 					/>
 				)}
 				{consumerScreen === 'consumer-orders' && (
 					<ConsumerOrdersScreen
-						onBack={() => setConsumerScreen('consumer-home')}
+						onBack={navigateConsumerBack}
 						onOpenOrder={(id) => {
 							setSelectedOrderId(id)
-							setConsumerScreen('order-detail')
+							setOrderDetailReturnTo('consumer-orders')
+							navigateConsumerTo('order-detail')
 						}}
 						language={language as 'en' | 'ru'}
 					/>
 				)}
 				{consumerScreen === 'linked-suppliers' && (
 					<ConsumerSuppliersScreen
-						onBack={() => setConsumerScreen('consumer-home')}
-						onRequestLink={() => setConsumerScreen('request-link')}
+						onBack={navigateConsumerBack}
+						onRequestLink={() => navigateConsumerTo('request-link')}
+						onNavigateToChat={(sessionId) => {
+							setSelectedChatSessionId(sessionId)
+							navigateConsumerTo('chat')
+						}}
 						language={language as 'en' | 'ru'}
 					/>
 				)}
 				{consumerScreen === 'request-link' && (
 					<ConsumerRequestLinkScreen
-						onBack={() => setConsumerScreen('linked-suppliers')}
+						onBack={navigateConsumerBack}
 						onSubmit={async (supplierId) => {
 							try {
 								// call API adapter to create a link request
@@ -333,8 +451,8 @@ export default function App() {
 							} catch (err) {
 								// handle errors appropriately
 							}
-							// after submit, navigate back to linked suppliers which will re-fetch the list
-							setConsumerScreen('linked-suppliers')
+							// after submit, navigate back using history
+							navigateConsumerBack()
 						}}
 						language={language as 'en' | 'ru'}
 					/>
@@ -342,15 +460,25 @@ export default function App() {
 				{consumerScreen === 'order-detail' && (
 					<ConsumerOrderDetailScreen
 						orderId={selectedOrderId}
-						onBack={() => setConsumerScreen('consumer-orders')}
-						onOpenChat={() => setConsumerScreen('chat')}
+						onBack={() => {
+							setSelectedOrderId(null)
+							navigateConsumerBack()
+							// Refresh notifications when returning from order detail
+							if (orderDetailReturnTo === 'notifications') {
+								setHomeScreenRefreshKey((prev) => prev + 1)
+							}
+						}}
+						onOpenChat={() => {
+							setSelectedChatSessionId(null)
+							navigateConsumerTo('chat')
+						}}
 						language={language as 'en' | 'ru'}
 						userName={user ? `${user.first_name} ${user.last_name}` : undefined}
 					/>
 				)}
 				{consumerScreen === 'cart' && (
 					<ConsumerCartScreen
-						onBack={() => setConsumerScreen('catalog')}
+						onBack={navigateConsumerBack}
 						navigateTo={navigateTo}
 						language={language as 'en' | 'ru'}
 					/>
@@ -358,7 +486,13 @@ export default function App() {
 				{consumerScreen === 'chat' && (
 					<ChatScreen
 						orderId={selectedOrderId}
-						onBack={() => setConsumerScreen('order-detail')}
+						sessionId={selectedChatSessionId}
+						messageId={selectedMessageId}
+						onBack={() => {
+								setSelectedChatSessionId(null)
+							setSelectedMessageId(null)
+							navigateConsumerBack()
+						}}
 						role="consumer"
 						language={language as 'en' | 'ru'}
 					/>
@@ -367,13 +501,56 @@ export default function App() {
 					<ConsumerProfileScreen
 						user={user}
 						language={language as 'en' | 'ru'}
-						setLanguage={(l) => setLanguage(l)}
-						onLogout={() => {
+						setLanguage={async (l) => {
+							// Save language to AsyncStorage
+							await saveLanguage(l)
+							setLanguage(l)
+						}}
+						onLogout={async () => {
+							await clearLanguage()
+							setLanguage(null)
 							setSignedIn(false)
 							setRole(null)
+							setConsumerHistory(['consumer-home'])
 							setConsumerScreen('consumer-home')
 						}}
-						onBack={() => setConsumerScreen('consumer-home')}
+						onBack={navigateConsumerBack}
+						onEdit={() => navigateConsumerTo('consumer-edit-profile')}
+					/>
+				)}
+				{consumerScreen === 'consumer-edit-profile' && (
+					<ConsumerEditProfileScreen
+						user={user}
+						language={language as 'en' | 'ru'}
+						onBack={navigateConsumerBack}
+						onSave={async (updatedUser) => {
+							setUser(updatedUser)
+							navigateConsumerBack()
+						}}
+					/>
+				)}
+				{consumerScreen === 'notifications' && (
+					<ConsumerNotificationsScreen
+						language={language as 'en' | 'ru'}
+						onBack={() => {
+							// Force re-render of home screen to refresh unread count
+							setHomeScreenRefreshKey((prev) => prev + 1)
+							navigateConsumerBack()
+						}}
+						onNotificationRead={() => {
+							// Trigger refresh when notification is read
+							setHomeScreenRefreshKey((prev) => prev + 1)
+						}}
+						onNavigateToOrder={(orderId) => {
+							setSelectedOrderId(orderId)
+							setOrderDetailReturnTo('notifications')
+							navigateConsumerTo('order-detail')
+						}}
+						onNavigateToChat={(sessionId, messageId) => {
+							setSelectedChatSessionId(sessionId)
+							setSelectedMessageId(messageId || null)
+							navigateConsumerTo('chat')
+						}}
 					/>
 				)}
 				<ToastHost />

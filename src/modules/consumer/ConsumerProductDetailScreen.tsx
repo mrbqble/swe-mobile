@@ -79,8 +79,14 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
 
         <View style={{ marginTop: 18 }}>
           <Text style={{ fontWeight: '700', marginBottom: 8 }}>{t.specs}</Text>
-          <View style={styles.specRow}><Text style={styles.specKey}>{t.sku || 'SKU'}</Text><Text style={styles.specVal}>{(item as any)?.sku ?? '—'}</Text></View>
+          <View style={styles.specRow}><Text style={styles.specKey}>{t.sku || 'SKU'}</Text><Text style={styles.specVal}>{(item as any)?.sku ?? item?.sku ?? '—'}</Text></View>
           <View style={styles.specRow}><Text style={styles.specKey}>{t.supplier || 'Supplier'}</Text><Text style={styles.specVal}>{item?.supplier || '—'}</Text></View>
+          {item?.minOrderQty && (
+            <View style={styles.specRow}>
+              <Text style={styles.specKey}>{t.minOrderQty || 'Minimum Order'}</Text>
+              <Text style={styles.specVal}>{item.minOrderQty}</Text>
+            </View>
+          )}
         </View>
 
         <View style={{ marginTop: 18 }}>
@@ -107,7 +113,8 @@ export default function ConsumerProductDetailScreen({ productId, onBack, languag
               setTimeout(() => setShowToast(false), TIMING.TOAST_DURATION);
               return;
             }
-            await add(item.id, qty);
+            // Pass supplierId when adding to cart to group items by supplier
+            await add(item.id, qty, item.supplierId);
             setToastMessage(t.addedToCart || 'Added to cart');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 2000);

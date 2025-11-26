@@ -19,10 +19,11 @@ export default function ConsumerRequestLinkScreen({
 	language?: 'en' | 'ru'
 }) {
 	const [query, setQuery] = useState('')
-	const [selected, setSelected] = useState<string | null>(null)
+	const [selected, setSelected] = useState<Set<string>>(new Set())
 	const [allSuppliers, setAllSuppliers] = useState<any[]>([])
 	const [linkedSupplierIds, setLinkedSupplierIds] = useState<Set<string | number>>(new Set())
 	const [loading, setLoading] = useState(true)
+	const [submitting, setSubmitting] = useState(false)
 	const L = getTranslations('consumer', 'requestLink', language ?? 'en')
 
 	// Fetch all suppliers and linked suppliers on mount
@@ -163,16 +164,12 @@ export default function ConsumerRequestLinkScreen({
 						color="#cbd5e1"
 					/>
 					<Text style={{ color: '#9CA3AF', marginTop: 12, fontSize: 16, fontWeight: '600' }}>
-						{query.trim()
-							? (L.noSuppliersFound || 'No suppliers found')
-							: (L.allSuppliersLinked || 'All suppliers are already linked')
-						}
+						{query.trim() ? L.noSuppliersFound || 'No suppliers found' : L.allSuppliersLinked || 'All suppliers are already linked'}
 					</Text>
 					<Text style={{ color: '#9CA3AF', marginTop: 8, textAlign: 'center', paddingHorizontal: 32 }}>
 						{query.trim()
-							? (L.tryDifferentSearch || 'Try a different search term')
-							: (L.allSuppliersLinkedDesc || 'You have already linked with all available suppliers or have pending requests with them.')
-						}
+							? L.tryDifferentSearch || 'Try a different search term'
+							: L.allSuppliersLinkedDesc || 'You have already linked with all available suppliers or have pending requests with them.'}
 					</Text>
 				</View>
 			) : (
@@ -180,57 +177,134 @@ export default function ConsumerRequestLinkScreen({
 					data={filteredResults}
 					keyExtractor={(i: any) => String(i.id)}
 					contentContainerStyle={{ padding: 16 }}
-					renderItem={({ item }: any) => (
-						<TouchableOpacity
-							onPress={() => setSelected(String(item.id))}
-							style={[styles.card, selected === String(item.id) ? { borderColor: '#2563eb', borderWidth: 1 } : {}]}
-						>
-							<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-								<View style={styles.avatar}>
-									<MaterialIcons
-										name="apartment"
-										size={18}
-										color="#2563eb"
-									/>
+					renderItem={({ item }: any) => {
+						const itemId = String(item.id)
+						const isSelected = selected.has(itemId)
+						return (
+							<TouchableOpacity
+								onPress={() => {
+									const newSelected = new Set(selected)
+									if (isSelected) {
+										newSelected.delete(itemId)
+									} else {
+										newSelected.add(itemId)
+									}
+									setSelected(newSelected)
+								}}
+								style={[styles.card, isSelected ? { borderColor: '#2563eb', borderWidth: 2 } : {}]}
+							>
+								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<View
+										style={{
+											width: 24,
+											height: 24,
+											borderRadius: 4,
+											borderWidth: 2,
+											borderColor: isSelected ? '#2563eb' : '#d1d5db',
+											backgroundColor: isSelected ? '#2563eb' : '#fff',
+											justifyContent: 'center',
+											alignItems: 'center',
+											marginRight: 12
+										}}
+									>
+										{isSelected && (
+											<Feather
+												name="check"
+												size={16}
+												color="#fff"
+											/>
+										)}
+									</View>
+									<View style={styles.avatar}>
+										<MaterialIcons
+											name="apartment"
+											size={18}
+											color="#2563eb"
+										/>
+									</View>
+									<View style={{ marginLeft: 12, flex: 1 }}>
+										<Text style={{ fontWeight: '700' }}>{item.company_name || item.name || L.supplier || 'Supplier'}</Text>
+										<Text style={{ color: '#6b7280', marginTop: 4 }}>{item.description || ''}</Text>
+									</View>
+									{item.rating && <Text style={{ color: '#f59e0b' }}>★ {item.rating}</Text>}
 								</View>
-								<View style={{ marginLeft: 12, flex: 1 }}>
-									<Text style={{ fontWeight: '700' }}>{item.company_name || item.name || L.supplier || 'Supplier'}</Text>
-									<Text style={{ color: '#6b7280', marginTop: 4 }}>{item.description || ''}</Text>
-								</View>
-								{item.rating && <Text style={{ color: '#f59e0b' }}>★ {item.rating}</Text>}
-							</View>
-						</TouchableOpacity>
-					)}
+							</TouchableOpacity>
+						)
+					}}
 				/>
 			)}
 
 			<View style={styles.footer}>
+				{selected.size > 0 && (
+					<Text style={{ color: '#6b7280', fontSize: 14, marginBottom: 8, textAlign: 'center' }}>
+						{L.selectedCount || 'Selected'}: {selected.size} {selected.size === 1 ? L.supplier || 'supplier' : L.suppliers || 'suppliers'}
+					</Text>
+				)}
 				<TouchableOpacity
-					disabled={!selected}
+					disabled={selected.size === 0 || submitting}
 					onPress={async () => {
-						if (!selected) return
+						if (selected.size === 0) return
 						try {
-							// Call backend to create link request
-							await linkedSuppliers.addLinkRequest(selected)
-							// optional callback
-							if (onSubmit) await onSubmit(selected)
+							setSubmitting(true)
+							const selectedArray = Array.from(selected)
+							const results = await Promise.allSettled(selectedArray.map((supplierId) => linkedSuppliers.addLinkRequest(supplierId)))
+
+							const successful = results.filter((r) => r.status === 'fulfilled').length
+							const failed = results.filter((r) => r.status === 'rejected').length
+
 							// trigger refresh for supplier/consumer lists
 							emitter.emit('linkRequestsChanged')
 							emitter.emit('linkedSuppliersChanged')
+
 							const commonT = getTranslations('shared', 'common', language ?? 'en')
-							toastShow(L.submitRequest || 'Request Submitted', L.requestSubmittedMessage || 'The supplier will review your request.')
-							// Navigate back after successful submission
-							onBack()
+
+							if (failed === 0) {
+								// All successful
+								const message =
+									successful === 1
+										? L.requestSubmittedMessage || 'The supplier will review your request.'
+										: (L.multipleRequestsSubmitted || `Link requests sent to ${successful} suppliers.`).replace('{count}', String(successful))
+								toastShow(commonT.success || 'Success', message)
+								// Navigate back after successful submission
+								onBack()
+							} else if (successful > 0) {
+								// Partial success
+								const message = (L.partialSuccess || `Sent ${successful} request(s), ${failed} failed.`)
+									.replace('{successful}', String(successful))
+									.replace('{failed}', String(failed))
+								toastShow(commonT.success || 'Success', message)
+								// Navigate back anyway since some succeeded
+								onBack()
+							} else {
+								// All failed
+								const firstError = results.find((r) => r.status === 'rejected') as PromiseRejectedResult
+								const errorMsg =
+									(firstError?.reason as any)?.body?.detail ||
+									(firstError?.reason as any)?.message ||
+									L.submitFailed ||
+									'Could not submit link request'
+								toastShow(commonT.error || 'Error', errorMsg)
+							}
 						} catch (err: any) {
-							console.error('Failed to submit link request:', err)
+							console.error('Failed to submit link requests:', err)
 							const commonT = getTranslations('shared', 'common', language ?? 'en')
 							const errorMsg = err?.body?.detail || err?.message || L.submitFailed || 'Could not submit link request'
 							toastShow(commonT.error || 'Error', errorMsg)
+						} finally {
+							setSubmitting(false)
 						}
 					}}
-					style={[styles.submitBtn, !selected ? { backgroundColor: '#e5e7eb' } : {}]}
+					style={[styles.submitBtn, selected.size === 0 || submitting ? { backgroundColor: '#e5e7eb' } : {}]}
 				>
-					<Text style={{ color: selected ? '#fff' : '#9ca3af', fontWeight: '700' }}>{L.submitRequest}</Text>
+					<Text style={{ color: selected.size > 0 && !submitting ? '#fff' : '#9ca3af', fontWeight: '700' }}>
+						{submitting
+							? L.submitting || 'Submitting...'
+							: selected.size === 0
+								? L.submitRequest
+								: selected.size === 1
+									? L.submitRequest
+									: L.submitMultipleRequests.replace('{count}', String(selected.size)) || `Submit ${selected.size} Requests`}
+					</Text>
 				</TouchableOpacity>
 			</View>
 		</SafeAreaView>

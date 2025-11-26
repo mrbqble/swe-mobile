@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { Feather } from '@expo/vector-icons'
 import { toastShow } from '../../helpers/toast'
 import { auth } from '../../api'
 import { styles } from '../../styles/auth/RegisterScreen.styles'
@@ -17,7 +18,9 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 	const [firstName, setFirstName] = useState('')
 	const [lastName, setLastName] = useState('')
 	const [email, setEmail] = useState('')
+	const [organizationName, setOrganizationName] = useState('')
 	const [password, setPassword] = useState('')
+	const [showPassword, setShowPassword] = useState(false)
 	const [loading, setLoading] = useState(false)
 
 	// Live validation states
@@ -43,9 +46,18 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 		setPasswordValid(ok)
 	}, [password])
 
+	// Check if form is valid (all fields filled and validated)
+	const isFormValid = firstName.trim() !== '' &&
+		lastName.trim() !== '' &&
+		email.trim() !== '' &&
+		organizationName.trim() !== '' &&
+		password.trim() !== '' &&
+		emailValid === true &&
+		passwordValid === true
+
 	const handleRegister = async () => {
 		const commonT = getTranslations('shared', 'common', language)
-		if (!firstName || !lastName || !email || !password) {
+		if (!firstName || !lastName || !email || !organizationName || !password) {
 			toastShow(commonT.validation || 'Validation', t.allFieldsRequired || 'All fields are required')
 			return
 		}
@@ -64,11 +76,19 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 		}
 		setLoading(true)
 		try {
-			const res: any = await (auth as any).registerConsumer({ firstName, lastName, email, password })
+			// Backend expects: email, password, first_name, last_name, role, organization_name
+			const res: any = await (auth as any).registerConsumer({
+				email,
+				password,
+				first_name: firstName,
+				last_name: lastName,
+				role: 'consumer', // Mobile app only supports consumer registration
+				organization_name: organizationName.trim() || undefined
+			})
 			toastShow(commonT.welcome || 'Welcome', t.accountCreated || 'Account created')
 			if (onRegistered) onRegistered(res.user || res)
 		} catch (e: any) {
-			const msg = e?.message || t.registrationFailed || 'Registration failed'
+			const msg = e?.message || e?.body?.detail || t.registrationFailed || 'Registration failed'
 			toastShow(commonT.error || 'Error', msg)
 		} finally {
 			setLoading(false)
@@ -76,75 +96,106 @@ export default function RegisterScreen({ language = 'en', onRegistered, onCancel
 	}
 
 	return (
-		<SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+		<SafeAreaView
+			style={styles.safeArea}
+			edges={['top', 'left', 'right']}
+		>
+			{/* Header inside SafeAreaView */}
 			<View style={styles.header}>
-				<Text style={styles.title}>{t.title}</Text>
+				<Text style={styles.headerText}>{t.title}</Text>
 			</View>
 			<View style={styles.body}>
-				<Text style={styles.label}>{t.firstName}</Text>
-				<TextInput
-					value={firstName}
-					onChangeText={setFirstName}
-					style={styles.input}
-					placeholder={t.firstNamePlaceholder}
-				/>
-				<Text style={styles.label}>{t.lastName}</Text>
-				<TextInput
-					value={lastName}
-					onChangeText={setLastName}
-					style={styles.input}
-					placeholder={t.lastNamePlaceholder}
-				/>
-				<Text style={styles.label}>{t.email}</Text>
-				<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+				<View style={styles.bodyContent}>
+					<Text style={styles.label}>{t.firstName}</Text>
 					<TextInput
-						value={email}
-						onChangeText={setEmail}
-						style={[styles.input, { flex: 1 }]}
-						placeholder={t.email}
-						keyboardType="email-address"
-						autoCapitalize="none"
+						value={firstName}
+						onChangeText={setFirstName}
+						style={styles.input}
+						placeholder={t.firstNamePlaceholder}
 					/>
-					{emailValid === true && <Text style={{ color: 'green', marginLeft: 8 }}>✓</Text>}
-					{emailValid === false && <Text style={{ color: 'red', marginLeft: 8 }}>✕</Text>}
+					<Text style={styles.label}>{t.lastName}</Text>
+					<TextInput
+						value={lastName}
+						onChangeText={setLastName}
+						style={styles.input}
+						placeholder={t.lastNamePlaceholder}
+					/>
+					<Text style={styles.label}>{t.email}</Text>
+					<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+						<TextInput
+							value={email}
+							onChangeText={setEmail}
+							style={[styles.input, { flex: 1 }]}
+							placeholder={t.email}
+							keyboardType="email-address"
+							autoCapitalize="none"
+						/>
+						{emailValid === true && <Text style={{ color: 'green', marginLeft: 8 }}>✓</Text>}
+						{emailValid === false && <Text style={{ color: 'red', marginLeft: 8 }}>✕</Text>}
+					</View>
+					<Text style={styles.label}>{t.organizationName || 'Organization Name'}</Text>
+					<TextInput
+						value={organizationName}
+						onChangeText={setOrganizationName}
+						style={styles.input}
+						placeholder={t.organizationNamePlaceholder || 'Enter organization name'}
+					/>
+					<Text style={styles.label}>{t.password}</Text>
+					<View style={{ position: 'relative' }}>
+						<TextInput
+							value={password}
+							onChangeText={setPassword}
+							style={styles.input}
+							placeholder={t.password}
+							secureTextEntry={!showPassword}
+						/>
+						<TouchableOpacity
+							onPress={() => setShowPassword(!showPassword)}
+							style={{
+								position: 'absolute',
+								right: 12,
+								top: 12,
+								padding: 4
+							}}
+						>
+							<Feather
+								name={showPassword ? 'eye-off' : 'eye'}
+								size={20}
+								color="#6b7280"
+							/>
+						</TouchableOpacity>
+					</View>
+					<View style={{ marginTop: 6 }}>
+						<Text style={{ fontSize: 12, color: passwordChecks.minLength(password) ? 'green' : '#6b7280' }}>
+							{passwordChecks.minLength(password) ? '✓' : '✕'} {t.passwordMinLength}
+						</Text>
+						<Text style={{ fontSize: 12, color: passwordChecks.upper(password) ? 'green' : '#6b7280' }}>
+							{passwordChecks.upper(password) ? '✓' : '✕'} {t.passwordUpper}
+						</Text>
+						<Text style={{ fontSize: 12, color: passwordChecks.lower(password) ? 'green' : '#6b7280' }}>
+							{passwordChecks.lower(password) ? '✓' : '✕'} {t.passwordLower}
+						</Text>
+						<Text style={{ fontSize: 12, color: passwordChecks.digitOrSymbol(password) ? 'green' : '#6b7280' }}>
+							{passwordChecks.digitOrSymbol(password) ? '✓' : '✕'} {t.passwordDigitOrSymbol}
+						</Text>
+					</View>
+					{/* Register Button */}
+					<TouchableOpacity
+						style={[styles.continueButton, (!isFormValid) && styles.continueButtonDisabled, { marginTop: 24 }]}
+						onPress={handleRegister}
+						disabled={loading || !isFormValid}
+					>
+						{loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.continueButtonText}>{t.register}</Text>}
+					</TouchableOpacity>
+					{/* Sign in link - center aligned */}
+					{typeof onCancel === 'function' && (
+						<View style={{ marginTop: 16, alignItems: 'center' }}>
+							<TouchableOpacity onPress={() => onCancel && onCancel()}>
+								<Text style={{ color: '#2563eb', fontSize: 14 }}>{t.haveAccount}</Text>
+							</TouchableOpacity>
+						</View>
+					)}
 				</View>
-				<Text style={styles.label}>{t.password}</Text>
-				<TextInput
-					value={password}
-					onChangeText={setPassword}
-					style={styles.input}
-					placeholder={t.password}
-					secureTextEntry
-				/>
-				<View style={{ marginTop: 6 }}>
-					<Text style={{ fontSize: 12, color: passwordChecks.minLength(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.minLength(password) ? '✓' : '✕'} {t.passwordMinLength}
-					</Text>
-					<Text style={{ fontSize: 12, color: passwordChecks.upper(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.upper(password) ? '✓' : '✕'} {t.passwordUpper}
-					</Text>
-					<Text style={{ fontSize: 12, color: passwordChecks.lower(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.lower(password) ? '✓' : '✕'} {t.passwordLower}
-					</Text>
-					<Text style={{ fontSize: 12, color: passwordChecks.digitOrSymbol(password) ? 'green' : '#6b7280' }}>
-						{passwordChecks.digitOrSymbol(password) ? '✓' : '✕'} {t.passwordDigitOrSymbol}
-					</Text>
-				</View>
-			</View>
-			<View style={styles.footer}>
-				<TouchableOpacity
-					style={[styles.button, loading && { opacity: 0.7 }]}
-					onPress={handleRegister}
-					disabled={loading}
-				>
-					{loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t.register}</Text>}
-				</TouchableOpacity>
-				<TouchableOpacity
-					style={{ marginTop: 12 }}
-					onPress={onCancel}
-				>
-					<Text style={{ color: '#2563eb', textAlign: 'center' }}>{t.haveAccount}</Text>
-				</TouchableOpacity>
 			</View>
 		</SafeAreaView>
 	)

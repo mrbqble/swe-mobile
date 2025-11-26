@@ -6,14 +6,17 @@ import { Feather, MaterialIcons } from '@expo/vector-icons'
 import { useLinkedSuppliers } from '../../hooks/useLinkedSuppliers'
 import { getTranslations, type Language } from '../../translations'
 import { LINK_STATUS, COLORS, getStatusColor, getStatusBgColor } from '../../constants'
+import { chat } from '../../api'
 
 export default function ConsumerSuppliersScreen({
 	onBack,
 	onRequestLink,
+	onNavigateToChat,
 	language
 }: {
 	onBack?: () => void
 	onRequestLink?: () => void
+	onNavigateToChat?: (sessionId: string) => void
 	language?: 'en' | 'ru'
 }) {
 	const { suppliers, loading } = useLinkedSuppliers()
@@ -49,6 +52,18 @@ export default function ConsumerSuppliersScreen({
 			}
 		}
 		const displayStatus = getStatusTranslation(status)
+		const isAccepted = status === LINK_STATUS.ACCEPTED.toLowerCase() || status === 'accepted'
+
+		const handleOpenChat = async () => {
+			if (!onNavigateToChat || !item.supplier?.id) return
+			try {
+				const supplierId = item.supplier.id
+				const session = await chat.getOrCreateChatSessionForSupplier(supplierId)
+				onNavigateToChat(String(session.id))
+			} catch (error) {
+				console.error('Failed to open chat:', error)
+			}
+		}
 
 		return (
 			<View style={styles.card}>
@@ -67,8 +82,27 @@ export default function ConsumerSuppliersScreen({
 							<Text style={{ color: '#9ca3af', marginTop: 4, fontSize: 12 }}>{L.requested || 'Requested'} {new Date(item.created_at).toLocaleDateString()}</Text>
 						)}
 					</View>
+					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+						{isAccepted && onNavigateToChat && (
+							<TouchableOpacity
+								onPress={handleOpenChat}
+								style={{
+									paddingHorizontal: 12,
+									paddingVertical: 6,
+									backgroundColor: '#2563eb',
+									borderRadius: 6,
+									flexDirection: 'row',
+									alignItems: 'center',
+									gap: 4
+								}}
+							>
+								<Feather name="message-circle" size={14} color="#fff" />
+								<Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>{L.openChat || 'Chat'}</Text>
+							</TouchableOpacity>
+						)}
 					<View style={[styles.statusPill, { backgroundColor: getStatusBgColor(status) }]}>
 						<Text style={[styles.statusText, { color: getStatusColor(status) }]}>{displayStatus}</Text>
+						</View>
 					</View>
 				</View>
 			</View>

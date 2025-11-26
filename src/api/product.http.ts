@@ -41,14 +41,32 @@ export async function fetchProduct(id: number | string): Promise<Product> {
   } as Product;
 }
 
+/**
+ * Create a product (supplier owner/manager only)
+ * NOTE: Not available to sales reps - they can only view catalog, not edit
+ * Backend expects POST /products with ProductCreate schema
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function createProduct(data: Partial<Product>) {
+  // Backend ProductCreate requires: name, price_kzt, sku, stock_qty
+  // Optional: description, currency (default: KZT), unit, min_order_qty, discount_percent,
+  // delivery_available (default: true), pickup_available (default: true), lead_time_days, is_active (default: true)
   const body = {
     name: data.name,
-    description: data.description,
+    description: data.description || null,
     price_kzt: data.price,
-    stock_qty: data.stock,
-    supplier_id: data.supplierId || (data as any).supplier_id,
-  } as any;
+    currency: data.currency || 'KZT',
+    sku: data.sku || `SKU-${Date.now()}`, // SKU is required, generate if not provided
+    stock_qty: data.stock || 0,
+    unit: (data as any).unit || 'pcs',
+    min_order_qty: (data as any).min_order_qty || 1,
+    discount_percent: (data as any).discount_percent || null,
+    delivery_available: (data as any).delivery_available !== false,
+    pickup_available: (data as any).pickup_available !== false,
+    lead_time_days: (data as any).lead_time_days || null,
+    is_active: (data as any).is_active !== false,
+  };
+  // Note: supplier_id is determined from authenticated user's supplier, not from request body
   return httpClient.fetchJson('/products', {
     method: 'POST',
     body: JSON.stringify(body),
@@ -56,4 +74,34 @@ export async function createProduct(data: Partial<Product>) {
   }) as Promise<Product>;
 }
 
+/**
+ * Update a product (supplier owner/manager only)
+ * NOTE: Not available to sales reps - they can only view catalog, not edit
+ * Backend expects PUT /products/{id} with ProductUpdate schema (all fields optional)
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function updateProduct(productId: number | string, data: Partial<Product>) {
+  const body: any = {};
+  if (data.name !== undefined) body.name = data.name;
+  if (data.description !== undefined) body.description = data.description;
+  if (data.price !== undefined) body.price_kzt = data.price;
+  if (data.currency !== undefined) body.currency = data.currency;
+  if (data.sku !== undefined) body.sku = data.sku;
+  if (data.stock !== undefined) body.stock_qty = data.stock;
+  if ((data as any).unit !== undefined) body.unit = (data as any).unit;
+  if ((data as any).min_order_qty !== undefined) body.min_order_qty = (data as any).min_order_qty;
+  if ((data as any).discount_percent !== undefined) body.discount_percent = (data as any).discount_percent;
+  if ((data as any).delivery_available !== undefined) body.delivery_available = (data as any).delivery_available;
+  if ((data as any).pickup_available !== undefined) body.pickup_available = (data as any).pickup_available;
+  if ((data as any).lead_time_days !== undefined) body.lead_time_days = (data as any).lead_time_days;
+  if ((data as any).is_active !== undefined) body.is_active = (data as any).is_active;
+
+  return httpClient.fetchJson(`/products/${encodeURIComponent(String(productId))}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+  }) as Promise<Product>;
+}
+
+// Note: createProduct and updateProduct removed - sales reps can only view catalog, not edit
 export default { listProducts, fetchProduct };

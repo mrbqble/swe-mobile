@@ -5,6 +5,8 @@ const { API_BASE, DEFAULT_HEADERS } = Config
 
 async function augmentHeaders(inputHeaders?: Record<string, string>) {
 	const headers: Record<string, string> = { ...(inputHeaders || {}), ...DEFAULT_HEADERS }
+	// Add X-Client-Type header to identify mobile client
+	headers['X-Client-Type'] = 'mobile'
 	const token = await getAccessToken()
 	if (token) {
 		headers['Authorization'] = `Bearer ${token}`
@@ -38,7 +40,7 @@ async function fetchJson(path: string, opts: RequestInit = {}) {
 				const refreshUrl = refreshPath.startsWith('http') ? refreshPath : `${API_BASE}${refreshPath.startsWith('/') ? '' : '/'}${refreshPath}`
 				const refreshRes = await fetch(refreshUrl, {
 					method: 'POST',
-					headers: { ...DEFAULT_HEADERS },
+					headers: { ...DEFAULT_HEADERS, 'X-Client-Type': 'mobile' },
 					body: JSON.stringify({ refresh_token: refreshToken })
 				})
 				const refreshText = await refreshRes.text()

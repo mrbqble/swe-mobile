@@ -3,60 +3,31 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { styles } from '../../styles/supplier/SupplierOrderDetailScreen.styles'
 import { Feather } from '@expo/vector-icons'
-import { orders } from '../../api'
+import { orders, complaints } from '../../api'
 import { emitter } from '../../helpers/events'
 import { toastShow } from '../../helpers/toast'
 import { formatPrice, formatDate } from '../../utils/formatters'
-import { ORDER_STATUS } from '../../constants'
+import { ORDER_STATUS, COMPLAINT_STATUS } from '../../constants'
 import { getTranslations, type Language } from '../../translations'
 
 export default function SupplierOrderDetailScreen({
 	orderId,
 	onBack,
 	onOpenChat,
+	onOpenComplaint,
 	language
 }: {
 	orderId: string | null
 	onBack: () => void
 	onOpenChat?: () => void
+	onOpenComplaint?: (complaintId: string) => void
 	language?: 'en' | 'ru'
 }) {
 	const [order, setOrder] = useState<any | null>(null)
+	const [complaint, setComplaint] = useState<any | null>(null)
 	const L = getTranslations('supplier', 'orderDetail', language ?? 'en')
 	const [loading, setLoading] = useState(false)
 
-	const getNextStatus = (currentStatus: string): string | null => {
-		const status = currentStatus.toLowerCase()
-		if (status === 'pending') return 'accepted'
-		if (status === 'accepted') return 'in_progress'
-		if (status === 'in_progress') return 'completed'
-		return null
-	}
-
-	const canUpdateStatus = (currentStatus: string): boolean => {
-		const status = currentStatus.toLowerCase()
-		return status === 'pending' || status === 'accepted' || status === 'in_progress'
-	}
-
-	const handleStatusUpdate = async (newStatus: string) => {
-		if (!orderId) return
-		try {
-			setLoading(true)
-			const updated = await orders.updateOrderStatus(orderId, newStatus)
-			setOrder(updated)
-			emitter.emit('ordersChanged')
-			const commonT = getTranslations('shared', 'common', language || 'en')
-			const statusMessage = (L.orderStatusUpdated || 'Order status updated to {status}').replace('{status}', newStatus)
-			toastShow(commonT.save || 'Success', statusMessage)
-		} catch (err: any) {
-			console.error('Failed to update order status:', err)
-			const commonT = getTranslations('shared', 'common', language || 'en')
-			const errorMsg = err?.body?.detail || err?.message || L.failedToUpdateStatus || 'Failed to update order status'
-			toastShow(commonT.error || 'Error', errorMsg)
-		} finally {
-			setLoading(false)
-		}
-	}
 
   const Timeline = () => {
     const steps = [
@@ -117,6 +88,15 @@ export default function SupplierOrderDetailScreen({
       try {
 				const o = await orders.fetchOrderById(orderId)
 				if (mounted) setOrder(o)
+
+				// Fetch complaint for this order if it exists
+				try {
+					const existing = await complaints.fetchComplaintByOrderId(orderId)
+					if (mounted) setComplaint(existing)
+				} catch (e) {
+					// No complaint exists, that's fine
+					if (mounted) setComplaint(null)
+				}
 			} catch (err: any) {
 				console.error('Failed to fetch order:', err)
 				const commonT = getTranslations('shared', 'common', language || 'en')
@@ -126,8 +106,8 @@ export default function SupplierOrderDetailScreen({
 			}
 		})()
 
-		// Subscribe to order updates
-		const unsub = emitter.on('ordersChanged', async () => {
+		// Subscribe to order and complaint updates
+		const unsubOrder = emitter.on('ordersChanged', async () => {
 			if (!orderId) return
 			try {
 				const o = await orders.fetchOrderById(orderId)
@@ -137,10 +117,22 @@ export default function SupplierOrderDetailScreen({
 			}
 		})
 
+		const unsubComplaint = emitter.on('complaintsChanged', async () => {
+			if (!orderId) return
+			try {
+				const existing = await complaints.fetchComplaintByOrderId(orderId)
+				if (mounted) setComplaint(existing)
+			} catch (e) {
+				// No complaint exists, that's fine
+				if (mounted) setComplaint(null)
+			}
+		})
+
 		return () => {
 			mounted = false
 			try {
-				unsub()
+				unsubOrder()
+				unsubComplaint()
 			} catch (e) {}
 		}
 	}, [orderId])
@@ -247,52 +239,69 @@ export default function SupplierOrderDetailScreen({
                     <Timeline />
                   </View>
 
-							{/* Status update buttons */}
-							{canUpdateStatus(order?.status || '') && (
-								<View style={{ marginTop: 16 }}>
-									<Text style={{ fontWeight: '700', marginBottom: 8 }}>{L.updateStatus}</Text>
-									{getNextStatus(order?.status || '') && (
-										<TouchableOpacity
-											onPress={() => handleStatusUpdate(getNextStatus(order?.status || '')!)}
-											disabled={loading}
+							{/* Complaint section */}
+							{complaint && (
+								<View style={{ marginTop: 16, padding: 16, backgroundColor: '#fef3c7', borderRadius: 8, borderWidth: 1, borderColor: '#fde68a' }}>
+									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+										<Text style={{ fontWeight: '700', fontSize: 16 }}>{L.complaint || 'Complaint'}</Text>
+										<View
 											style={{
-												padding: 12,
-												borderRadius: 8,
-												backgroundColor: '#2563eb',
-												alignItems: 'center',
-												opacity: loading ? 0.6 : 1
+												paddingHorizontal: 8,
+												paddingVertical: 4,
+												borderRadius: 12,
+												backgroundColor:
+													complaint.status?.toLowerCase() === COMPLAINT_STATUS.RESOLVED
+														? '#d1fae5'
+														: complaint.status?.toLowerCase() === COMPLAINT_STATUS.ESCALATED
+														? '#fee2e2'
+														: '#dbeafe'
 											}}
 										>
-											{loading ? (
-												<ActivityIndicator color="#fff" />
-											) : (
-												<Text style={{ color: '#fff', fontWeight: '700' }}>
-													{L.markAs}{' '}
-													{getNextStatus(order?.status || '')
-														?.replace('_', ' ')
-														.toUpperCase()}
-												</Text>
-											)}
-										</TouchableOpacity>
-									)}
-									{order?.status?.toLowerCase() === 'pending' && (
-										<TouchableOpacity
-											onPress={() => handleStatusUpdate('rejected')}
-											disabled={loading}
-											style={{
-												marginTop: 8,
-												padding: 12,
-												borderRadius: 8,
-												backgroundColor: '#fee2e2',
-												borderWidth: 1,
-												borderColor: '#fecaca',
-												alignItems: 'center',
-												opacity: loading ? 0.6 : 1
-											}}
-										>
-											<Text style={{ color: '#dc2626', fontWeight: '700' }}>{L.rejectOrder}</Text>
-										</TouchableOpacity>
-									)}
+											<Text
+												style={{
+													color:
+														complaint.status?.toLowerCase() === COMPLAINT_STATUS.RESOLVED
+															? '#059669'
+															: complaint.status?.toLowerCase() === COMPLAINT_STATUS.ESCALATED
+															? '#dc2626'
+															: '#2563eb',
+													fontSize: 12,
+													fontWeight: '600'
+												}}
+											>
+												{(() => {
+													const statusLower = (complaint.status || '').toLowerCase()
+													if (statusLower === 'open') return L.complaintOpen || 'Open'
+													if (statusLower === 'escalated') return L.complaintEscalated || 'Escalated'
+													if (statusLower === 'resolved') return L.complaintResolved || 'Resolved'
+													return complaint.status?.charAt(0).toUpperCase() + complaint.status?.slice(1) || 'Open'
+												})()}
+											</Text>
+										</View>
+									</View>
+									<Text style={{ color: '#374151', marginBottom: 8 }} numberOfLines={2}>
+										{complaint.description || complaint.reason || L.noDescription || 'No description'}
+									</Text>
+									<Text style={{ color: '#6b7280', fontSize: 12, marginBottom: 12 }}>
+										{L.submitted || 'Submitted:'} {formatDate(complaint.created_at || complaint.createdAt || '')}
+									</Text>
+									<TouchableOpacity
+										onPress={() => {
+											if (onOpenComplaint && complaint.id) {
+												onOpenComplaint(String(complaint.id))
+											}
+										}}
+										style={{
+											padding: 10,
+											borderRadius: 6,
+											backgroundColor: '#fff',
+											borderWidth: 1,
+											borderColor: '#e5e7eb',
+											alignItems: 'center'
+										}}
+									>
+										<Text style={{ color: '#2563eb', fontWeight: '600' }}>{L.viewComplaintDetails || 'View Complaint Details'}</Text>
+									</TouchableOpacity>
 								</View>
 							)}
 

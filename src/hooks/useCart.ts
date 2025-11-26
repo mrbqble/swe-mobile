@@ -5,23 +5,27 @@ import { useState, useEffect } from 'react'
 type CartData = {
 	items: any[]
 	totalQty: number
+	bySupplier?: Record<string, any[]>
 }
 
 export function useCart() {
 	const [items, setItems] = useState<any[]>([])
 	const [totalQty, setTotalQty] = useState(0)
+	const [bySupplier, setBySupplier] = useState<Record<string, any[]>>({})
 
 	const { loading, execute: load, error } = useAsync<CartData>({
 		fn: async () => {
 			const res = await cart.getCart()
 			return {
 				items: res.items || [],
-				totalQty: res.totalQty || 0
+				totalQty: res.totalQty || 0,
+				bySupplier: res.bySupplier || {}
 			}
 		},
 		onSuccess: (data) => {
 			setItems(data.items)
 			setTotalQty(data.totalQty)
+			setBySupplier(data.bySupplier || {})
 		}
 	})
 
@@ -30,9 +34,9 @@ export function useCart() {
 		load()
 	}, [])
 
-	const add = async (productId: number | string, qty = 1) => {
+	const add = async (productId: number | string, qty = 1, supplierId?: number | string) => {
 		try {
-			await cart.addToCart(productId, qty)
+			await cart.addToCart(productId, qty, supplierId)
 		await load()
 		} catch (err) {
 			console.error('Error adding to cart:', err)
@@ -50,9 +54,9 @@ export function useCart() {
 		}
 	}
 
-	const update = async (productId: number | string, qty: number) => {
+	const update = async (productId: number | string, qty: number, supplierId?: number | string) => {
 		try {
-			await cart.updateCartItem(productId, qty)
+			await cart.updateCartItem(productId, qty, supplierId)
 			await load()
 		} catch (err) {
 			console.error('Error updating cart item:', err)
@@ -70,5 +74,5 @@ export function useCart() {
 		}
 	}
 
-	return { items, totalQty, loading, load, add, remove, clear, update, error }
+	return { items, totalQty, bySupplier, loading, load, add, remove, clear, update, error }
 }

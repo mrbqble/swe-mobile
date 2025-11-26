@@ -23,6 +23,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 24,
+    alignItems: 'center',
+  },
+  bodyContent: {
+    width: '100%',
+    maxWidth: 400,
   },
   label: {
     fontSize: 14,
@@ -70,6 +75,11 @@ export const styles = StyleSheet.create({
     padding: 24,
     borderTopWidth: 1,
     borderTopColor: '#f3f4f6',
+    alignItems: 'center',
+  },
+  footerContent: {
+    width: '100%',
+    maxWidth: 400,
   },
   continueButton: {
     height: 48,
@@ -77,6 +87,8 @@ export const styles = StyleSheet.create({
     backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    maxWidth: 400,
   },
   continueButtonDisabled: {
     backgroundColor: '#e5e7eb',

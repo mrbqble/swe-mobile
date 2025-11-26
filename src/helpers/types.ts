@@ -6,6 +6,7 @@ export interface Product {
   price: number; // integer in local currency units
   currency?: string;
   stock: number;
+  minOrderQty?: number; // minimum order quantity
   imageUrl?: string;
   supplier?: string;
   supplierId?: number | string;

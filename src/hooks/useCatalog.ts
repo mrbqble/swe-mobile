@@ -24,9 +24,8 @@ export function useCatalog(initialQuery = '', pageSize = PAGINATION.CATALOG_PAGE
 			return (catalog as any).fetchCatalog({
 				supplier_id: supplierId,
 				page: nextPage,
-				size: pageSize
-				// Note: Backend catalog endpoint doesn't support search parameter
-				// Search would need to be implemented client-side or via a different endpoint
+				size: pageSize,
+				q: searchQuery.trim() || undefined // Backend now supports search query
 			})
 		},
 		[supplierId, pageSize]

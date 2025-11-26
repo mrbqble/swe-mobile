@@ -33,7 +33,7 @@ export default function ToastHost() {
   const t = toasts[0];
 
   return (
-    <View pointerEvents="box-none" style={[styles.container, { bottom: insets.bottom + 16 }] as any}>
+    <View pointerEvents="box-none" style={[styles.container, { top: insets.top + 16 }] as any}>
       <View style={styles.toast}>
         {t.title ? <Text style={styles.title}>{t.title}</Text> : null}
         {t.message ? <Text style={styles.message}>{t.message}</Text> : null}
