@@ -49,6 +49,7 @@ export const LINK_STATUS = {
 	ACCEPTED: 'accepted',
 	DENIED: 'denied',
 	BLOCKED: 'blocked',
+	UNLINKED: 'unlinked',
 	REJECTED: 'rejected'
 } as const
 
@@ -200,7 +201,7 @@ export function getStatusColor(status: string): string {
 	if (statusLower.includes('resolved') || statusLower.includes('completed') || statusLower === LINK_STATUS.ACCEPTED) {
 		return COLORS.SUCCESS
 	}
-	if (statusLower.includes('progress') || statusLower === LINK_STATUS.PENDING) {
+	if (statusLower.includes('progress') || statusLower === LINK_STATUS.PENDING || statusLower === LINK_STATUS.UNLINKED) {
 		return COLORS.WARNING
 	}
 	if (
@@ -224,7 +225,7 @@ export function getStatusBgColor(status: string): string {
 	if (statusLower.includes('resolved') || statusLower.includes('completed') || statusLower === LINK_STATUS.ACCEPTED) {
 		return COLORS.SUCCESS_LIGHT
 	}
-	if (statusLower.includes('progress') || statusLower === LINK_STATUS.PENDING) {
+	if (statusLower.includes('progress') || statusLower === LINK_STATUS.PENDING || statusLower === LINK_STATUS.UNLINKED) {
 		return COLORS.WARNING_LIGHT
 	}
 	if (

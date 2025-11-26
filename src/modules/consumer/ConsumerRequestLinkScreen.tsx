@@ -40,12 +40,13 @@ export default function ConsumerRequestLinkScreen({
 
 				if (mounted) {
 					setAllSuppliers(suppliersRes.items || [])
-					// Extract supplier IDs that are already linked (accepted or pending)
+					// Extract supplier IDs that are already linked (accepted, pending, or unlinked)
 					const linkedIds = new Set<string | number>()
 					;(linkedRes || []).forEach((link: any) => {
 						const status = (link.status || '').toLowerCase()
-						// Filter out suppliers with 'accepted' or 'pending' status
-						if (status === 'accepted' || status === 'pending') {
+						// Filter out suppliers with 'accepted', 'pending', or 'unlinked' status
+						// (unlinked means they can see it but can't request again until they re-request)
+						if (status === 'accepted' || status === 'pending' || status === 'unlinked') {
 							const supplierId = link.supplier_id || link.supplier?.id
 							if (supplierId) {
 								linkedIds.add(String(supplierId))
@@ -74,7 +75,7 @@ export default function ConsumerRequestLinkScreen({
 				const linkedIds = new Set<string | number>()
 				;(linkedRes || []).forEach((link: any) => {
 					const status = (link.status || '').toLowerCase()
-					if (status === 'accepted' || status === 'pending') {
+					if (status === 'accepted' || status === 'pending' || status === 'unlinked') {
 						const supplierId = link.supplier_id || link.supplier?.id
 						if (supplierId) {
 							linkedIds.add(String(supplierId))

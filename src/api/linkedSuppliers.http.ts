@@ -1,6 +1,6 @@
 import httpClient from './httpClient'
 
-export type LinkStatus = 'pending' | 'accepted' | 'denied' | 'blocked'
+export type LinkStatus = 'pending' | 'accepted' | 'denied' | 'blocked' | 'unlinked'
 // Match backend LinkResponse shape: id, consumer_id, supplier_id, status, created_at, updated_at
 export type LinkedSupplier = {
 	id: number | string

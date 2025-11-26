@@ -45,6 +45,8 @@ export default function ConsumerSuppliersScreen({
 					return L.statusDenied || 'Denied'
 				case 'blocked':
 					return L.statusBlocked || 'Blocked'
+				case 'unlinked':
+					return L.statusUnlinked || 'Unlinked'
 				case 'rejected':
 					return L.statusRejected || 'Rejected'
 				default:
