@@ -63,7 +63,6 @@ export default function SupplierOrdersScreen({
 				}
 			})
 		}
-		console.log(statusFilter)
 	}
 
 	// Normalize backend order structure to frontend format

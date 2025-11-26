@@ -45,8 +45,10 @@ export default function ChatScreen({
 	const [hasScrolledToMessage, setHasScrolledToMessage] = useState(false) // Track if we've scrolled to the target message
 	const [pendingAttachments, setPendingAttachments] = useState<ChatAttachment[]>([]) // Attachments waiting to be sent
 
-	// Get or create chat session for the order, or use provided sessionId
+	// Get or create chat session for the order, or use provided sessionId (CONSUMER)
 	useEffect(() => {
+		if (role !== 'consumer') return
+
 		let mounted = true
 		;(async () => {
 			// If sessionId is provided directly, use it (assume link is already validated)
@@ -74,107 +76,66 @@ export default function ChatScreen({
 				setHasAcceptedLink(null)
 				return
 			}
+
 			setSessionLoading(true)
 			setHasAcceptedLink(null) // Reset link check
+
 			try {
 				const o = await orders.fetchOrderById(orderId)
 				if (mounted) setOrderInfo(o)
 
-				// For consumer: check if there's an accepted link before allowing chat
-				// For supplier: find existing session for this order
-				if (role === 'consumer') {
-					// If links are still loading, wait for them to finish (effect will re-run when loaded)
-					if (linksLoading) {
-						if (mounted) {
-							setSessionLoading(false)
-						}
-						return
-					}
-
-					// Check if consumer has an accepted link with the order's supplier
-					const orderSupplierId = o.supplier_id
-					if (!orderSupplierId) {
-						console.error('Order missing supplier_id')
-						if (mounted) {
-							setHasAcceptedLink(false)
-							setSessionId(null)
-						}
-						return
-					}
-
-					// Check if there's an accepted link with this supplier
-					const acceptedLink = linkedSuppliers.find((link: any) => {
-						const linkSupplierId = link.supplier_id || link.supplierId || link.supplier?.id
-						const status = String(link.status || '').toLowerCase()
-						return linkSupplierId === orderSupplierId && status === LINK_STATUS.ACCEPTED.toLowerCase()
-					})
-
-					if (!acceptedLink) {
-						// No accepted link - cannot chat
-						if (mounted) {
-							setHasAcceptedLink(false)
-							setSessionId(null)
-						}
-						return
-					}
-
-					// Has accepted link - proceed to create/get session
-					if (mounted) setHasAcceptedLink(true)
-					// Backend will auto-assign sales rep based on order's supplier
-					const session = await chat.getOrCreateChatSessionForOrder(orderId, null)
+				// If links are still loading, wait for them to finish (effect will re-run when loaded)
+				if (linksLoading) {
 					if (mounted) {
-						setSessionId(session.id)
-						setSessionInfo({
-							salesRepName: session.salesRepName,
-							consumerName: session.consumerName
-						})
+						setSessionLoading(false)
 					}
-				} else {
-					// Supplier: find existing session for this consumer-supplier pair
-					// According to specs: one thread per Consumer-Supplier pair, reused for all orders
-					try {
-						const o = await orders.fetchOrderById(orderId)
-						if (mounted) setOrderInfo(o)
+					return
+				}
 
-						// Get all sessions for this sales rep (backend filters by supplier)
-						const sessions = await chat.listChatSessions(1, 100)
-						// Find session where consumer matches the order's consumer
-						// The order has consumer_id, and we need to match it with session's consumer_id
-						// According to specs: one thread per Consumer-Supplier pair, so we find the session
-						// for the consumer who placed this order
-						const existing = sessions.items.find((s: any) => {
-							// Match by consumer_id - the session should have consumer_id that matches order's consumer
-							// Backend returns consumer info in the response, so we can match by consumer_id
-							return s.consumer_id === o.consumer_id || s.consumerId === o.consumer_id
-						})
-
-						if (existing && mounted) {
-							setSessionId(existing.id)
-							setSessionInfo({
-								salesRepName: existing.salesRepName,
-								consumerName: existing.consumerName
-							})
-						} else if (mounted) {
-							// No session exists yet - consumer needs to start chat first
-							setSessionId(null)
-							setSessionInfo(null)
-							setHasAcceptedLink(true) // Supplier can see chat even if session doesn't exist yet (consumer will create it)
-						}
-					} catch (e) {
-						console.error('Failed to find chat session:', e)
-						if (mounted) {
-							setSessionId(null)
-							setSessionInfo(null)
-							setHasAcceptedLink(true) // Assume link exists for supplier (backend enforces)
-						}
+				// Check if consumer has an accepted link with the order's supplier
+				const orderSupplierId = o.supplier_id
+				if (!orderSupplierId) {
+					console.error('Order missing supplier_id')
+					if (mounted) {
+						setHasAcceptedLink(false)
+						setSessionId(null)
 					}
+					return
+				}
+
+				// Check if there's an accepted link with this supplier
+				const acceptedLink = linkedSuppliers.find((link: any) => {
+					const linkSupplierId = link.supplier_id || link.supplierId || link.supplier?.id
+					const status = String(link.status || '').toLowerCase()
+					return linkSupplierId === orderSupplierId && status === LINK_STATUS.ACCEPTED.toLowerCase()
+				})
+
+				if (!acceptedLink) {
+					// No accepted link - cannot chat
+					if (mounted) {
+						setHasAcceptedLink(false)
+						setSessionId(null)
+					}
+					return
+				}
+
+				// Has accepted link - proceed to create/get session
+				if (mounted) setHasAcceptedLink(true)
+				// Backend will auto-assign sales rep based on order's supplier
+				const session = await chat.getOrCreateChatSessionForOrder(orderId, null)
+				if (mounted) {
+					setSessionId(session.id)
+					setSessionInfo({
+						salesRepName: session.salesRepName,
+						consumerName: session.consumerName
+					})
 				}
 			} catch (e) {
 				console.error('Failed to setup chat session:', e)
 				if (mounted) {
 					setSessionId(null)
-					// Only set hasAcceptedLink to false if we're a consumer and haven't checked links yet
-					if (role === 'consumer' && hasAcceptedLink === null) {
+					// Only set hasAcceptedLink to false if we haven't checked links yet
+					if (hasAcceptedLink === null) {
 						setHasAcceptedLink(false)
 					}
 				}
@@ -182,10 +143,84 @@ export default function ChatScreen({
 				if (mounted) setSessionLoading(false)
 			}
 		})()
+
 		return () => {
 			mounted = false
 		}
-	}, [orderId, role, linkedSuppliers, linksLoading])
+	}, [orderId, role, linkedSuppliers, linksLoading, providedSessionId, hasAcceptedLink])
+
+	// Get or create chat session for the order, or use provided sessionId (SUPPLIER / SALES REP)
+	useEffect(() => {
+		if (role !== 'supplier') return
+
+		let mounted = true
+		;(async () => {
+			// If sessionId is provided directly, use it (assume link is already validated)
+			if (providedSessionId) {
+				setSessionId(providedSessionId)
+				setHasAcceptedLink(true)
+				try {
+					const sessions = await chat.listChatSessions(1, 100)
+					const session = sessions.items.find((s: any) => s.id === Number(providedSessionId))
+					if (session && mounted) {
+						setSessionInfo({
+							salesRepName: session.salesRepName,
+							consumerName: session.consumerName
+						})
+					}
+				} catch (error) {
+					console.error('Failed to load session info:', error)
+				}
+				return
+			}
+
+			if (!orderId) {
+				setSessionId(null)
+				setHasAcceptedLink(null)
+				return
+			}
+
+			setSessionLoading(true)
+			try {
+				const o = await orders.fetchOrderById(orderId)
+				if (mounted) setOrderInfo(o)
+
+				// Get all sessions for this sales rep (backend filters by supplier)
+				const sessions = await chat.listChatSessions(1, 100)
+				// Find session where consumer matches the order's consumer
+				const existing = sessions.items.find((s: any) => {
+					return s.consumer_id === o.consumer_id || s.consumerId === o.consumer_id
+				})
+
+				if (existing && mounted) {
+					setSessionId(existing.id)
+					setSessionInfo({
+						salesRepName: existing.salesRepName,
+						consumerName: existing.consumerName
+					})
+					setHasAcceptedLink(true)
+				} else if (mounted) {
+					// No session exists yet - consumer needs to start chat first
+					setSessionId(null)
+					setSessionInfo(null)
+					setHasAcceptedLink(true) // Supplier can see chat even if session doesn't exist yet
+				}
+			} catch (e) {
+				console.error('Failed to find chat session for supplier:', e)
+				if (mounted) {
+					setSessionId(null)
+					setSessionInfo(null)
+					setHasAcceptedLink(true) // Assume link exists for supplier (backend enforces)
+				}
+			} finally {
+				if (mounted) setSessionLoading(false)
+			}
+		})()
+
+		return () => {
+			mounted = false
+		}
+	}, [orderId, role, providedSessionId])
 
 	// Scroll to end when new messages arrive (unless we're scrolling to a specific message)
 	useEffect(() => {

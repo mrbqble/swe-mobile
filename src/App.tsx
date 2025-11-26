@@ -64,7 +64,7 @@ export default function App() {
 					let userRole: UserRole = null
 					if (userData.role === 'consumer') {
 						userRole = 'consumer'
-					} else if (userData.role === 'supplier_sales') {
+					} else if (userData.role === 'supplier_sales' || userData.role === 'supplier_owner' || userData.role === 'supplier_manager') {
 						userRole = 'supplier'
 					}
 					if (userRole) {

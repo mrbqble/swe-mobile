@@ -1,27 +1,27 @@
 // HTTP adapter for complaints API
-import httpClient from './httpClient';
-import { PAGINATION } from '../constants';
+import httpClient from './httpClient'
+import { PAGINATION } from '../constants'
 
-export type ComplaintStatus = 'open' | 'escalated' | 'resolved';
+export type ComplaintStatus = 'open' | 'escalated' | 'resolved'
 
 export type Complaint = {
-	id: number | string;
-	order_id: number;
-	orderId?: number; // alias for order_id
-	consumer_id: number;
-	consumerId?: number; // alias for consumer_id
-	sales_rep_id: number;
-	salesRepId?: number; // alias for sales_rep_id
-	manager_id: number;
-	managerId?: number; // alias for manager_id
-	status: ComplaintStatus;
-	description: string;
-	reason?: string; // alias for description
-	resolution?: string | null;
-	consumer_feedback?: boolean | null; // true=satisfied, false=not satisfied, null=no feedback
-	created_at: string;
-	createdAt?: string; // alias for created_at
-};
+	id: number | string
+	order_id: number
+	orderId?: number // alias for order_id
+	consumer_id: number
+	consumerId?: number // alias for consumer_id
+	sales_rep_id: number
+	salesRepId?: number // alias for sales_rep_id
+	manager_id: number
+	managerId?: number // alias for manager_id
+	status: ComplaintStatus
+	description: string
+	reason?: string // alias for description
+	resolution?: string | null
+	consumer_feedback?: boolean | null // true=satisfied, false=not satisfied, null=no feedback
+	created_at: string
+	createdAt?: string // alias for created_at
+}
 
 /**
  * Create a complaint (consumer only)
@@ -37,28 +37,28 @@ export async function createComplaint(
 	const body: any = {
 		order_id: Number(order_id),
 		description: description
-	};
+	}
 	// Only include sales_rep_id and manager_id if they are provided (not null/undefined)
 	if (sales_rep_id !== null && sales_rep_id !== undefined) {
-		body.sales_rep_id = Number(sales_rep_id);
+		body.sales_rep_id = Number(sales_rep_id)
 	}
 	if (manager_id !== null && manager_id !== undefined) {
-		body.manager_id = Number(manager_id);
+		body.manager_id = Number(manager_id)
 	}
 	const res = await httpClient.fetchJson('/complaints', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body)
-	});
-	return normalizeComplaint(res);
+	})
+	return normalizeComplaint(res)
 }
 
 /**
  * Get a single complaint by ID
  */
 export async function getComplaint(complaintId: string | number): Promise<Complaint> {
-	const res = await httpClient.fetchJson(`/complaints/${encodeURIComponent(String(complaintId))}`);
-	return normalizeComplaint(res);
+	const res = await httpClient.fetchJson(`/complaints/${encodeURIComponent(String(complaintId))}`)
+	return normalizeComplaint(res)
 }
 
 /**
@@ -70,18 +70,18 @@ export async function listComplaints(
 	page: number = 1,
 	size: number = PAGINATION.DEFAULT_PAGE_SIZE
 ): Promise<{ items: Complaint[]; page: number; size: number; total: number; pages: number }> {
-	const q = new URLSearchParams();
-	q.set('page', String(page));
-	q.set('size', String(size));
-	const res = await httpClient.fetchJson(`/complaints?${q.toString()}`);
-	const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+	const q = new URLSearchParams()
+	q.set('page', String(page))
+	q.set('size', String(size))
+	const res = await httpClient.fetchJson(`/complaints?${q.toString()}`)
+	const items = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : []
 	return {
 		items: items.map(normalizeComplaint),
 		page: res?.page ?? page,
 		size: res?.size ?? size,
 		total: res?.total ?? items.length,
 		pages: res?.pages ?? 1
-	};
+	}
 }
 
 /**
@@ -89,7 +89,7 @@ export async function listComplaints(
  * @deprecated Use listComplaints() instead - backend filters by role automatically
  */
 export async function fetchComplaintsForSupplier(supplier?: string) {
-	return listComplaints();
+	return listComplaints()
 }
 
 /**
@@ -97,28 +97,25 @@ export async function fetchComplaintsForSupplier(supplier?: string) {
  * @deprecated Use listComplaints() instead - backend filters by role automatically
  */
 export async function fetchComplaintsForConsumer(consumerId?: string | number) {
-	return listComplaints();
+	return listComplaints()
 }
 
 /**
  * Update complaint status (sales rep or manager only)
  * Backend expects: { status, resolution? } (resolution required when resolving)
  */
-export async function updateComplaintStatus(
-	complaintId: string | number,
-	status: ComplaintStatus,
-	resolution?: string | null
-): Promise<Complaint> {
-	const body: any = { status };
+export async function updateComplaintStatus(complaintId: string | number, status: ComplaintStatus, resolution?: string | null): Promise<Complaint> {
+	const body: any = { status }
 	if (resolution !== undefined && resolution !== null) {
-		body.resolution = resolution;
+		body.resolution = resolution
 	}
+	console.log('body', body)
 	const res = await httpClient.fetchJson(`/complaints/${encodeURIComponent(String(complaintId))}/status`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body)
-	});
-	return normalizeComplaint(res);
+	})
+	return normalizeComplaint(res)
 }
 
 /**
@@ -126,11 +123,11 @@ export async function updateComplaintStatus(
  */
 export async function fetchComplaintByOrderId(orderId: string | number): Promise<Complaint | null> {
 	try {
-		const res = await listComplaints(1, 100);
-		const complaint = res.items.find((c: Complaint) => c.order_id === Number(orderId) || c.orderId === Number(orderId));
-		return complaint || null;
+		const res = await listComplaints(1, 100)
+		const complaint = res.items.find((c: Complaint) => c.order_id === Number(orderId) || c.orderId === Number(orderId))
+		return complaint || null
 	} catch (e) {
-		return null;
+		return null
 	}
 }
 
@@ -138,16 +135,13 @@ export async function fetchComplaintByOrderId(orderId: string | number): Promise
  * Submit consumer feedback on a resolved complaint (consumer only)
  * Backend expects: { satisfied: boolean }
  */
-export async function submitConsumerFeedback(
-	complaintId: string | number,
-	satisfied: boolean
-): Promise<Complaint> {
+export async function submitConsumerFeedback(complaintId: string | number, satisfied: boolean): Promise<Complaint> {
 	const res = await httpClient.fetchJson(`/complaints/${encodeURIComponent(String(complaintId))}/feedback`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ satisfied })
-	});
-	return normalizeComplaint(res);
+	})
+	return normalizeComplaint(res)
 }
 
 /**
@@ -157,8 +151,8 @@ export async function reopenComplaint(complaintId: string | number): Promise<Com
 	const res = await httpClient.fetchJson(`/complaints/${encodeURIComponent(String(complaintId))}/reopen`, {
 		method: 'PATCH',
 		headers: { 'Content-Type': 'application/json' }
-	});
-	return normalizeComplaint(res);
+	})
+	return normalizeComplaint(res)
 }
 
 /**
@@ -167,14 +161,14 @@ export async function reopenComplaint(complaintId: string | number): Promise<Com
 function normalizeComplaint(complaint: any): Complaint & { consumerName?: string; consumer?: any } {
 	// Helper to format full name from first_name and last_name
 	const formatFullName = (person: any) => {
-		if (!person) return '';
+		if (!person) return ''
 		if (person.first_name && person.last_name) {
-			return `${person.first_name} ${person.last_name}`.trim();
+			return `${person.first_name} ${person.last_name}`.trim()
 		}
-		return person.organization_name || person.company_name || person.name || '';
-	};
+		return person.organization_name || person.company_name || person.name || ''
+	}
 
-	const consumerName = formatFullName(complaint.consumer) || complaint.consumer?.organization_name || complaint.consumer?.name || '';
+	const consumerName = formatFullName(complaint.consumer) || complaint.consumer?.organization_name || complaint.consumer?.name || ''
 
 	return {
 		id: complaint.id,
@@ -195,7 +189,7 @@ function normalizeComplaint(complaint: any): Complaint & { consumerName?: string
 		createdAt: complaint.created_at,
 		consumerName: consumerName,
 		consumer: complaint.consumer
-	};
+	}
 }
 
 export default {
@@ -208,5 +202,4 @@ export default {
 	fetchComplaintByOrderId,
 	submitConsumerFeedback,
 	reopenComplaint
-};
-
+}

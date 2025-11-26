@@ -174,7 +174,7 @@ export async function getOrCreateChatSessionForSupplier(
 	sales_rep_id?: number | string | null | undefined
 ): Promise<ChatSession> {
 	// Backend will find or create the session based on consumer-supplier pair
-	return createChatSession(sales_rep_id, supplierId, undefined)
+	return createChatSession(sales_rep_id, supplierId)
 }
 
 // backend does not have an explicit mark-read endpoint in current API; keep a no-op
